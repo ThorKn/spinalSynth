@@ -1,4 +1,63 @@
-SpinalHDL DDS Audio Oscillator Specification
+SpinalHDL DDS Audio Oscillator
+
+A compact FPGA audio oscillator implemented in SpinalHDL using a DDS (Direct Digital Synthesis) phase accumulator architecture.
+
+The project focuses on:
+
+clean synchronous FPGA design
+
+compact implementation
+
+deterministic timing
+
+oversampled DDS waveform generation
+
+stereo I²S audio output
+
+educational clarity and extensibility
+
+
+
+---
+
+Features
+
+24-bit DDS phase accumulator
+
+480 kHz internal DDS update rate
+
+48 kHz stereo audio output
+
+16-bit signed audio samples
+
+Stereo I²S output interface
+
+Oversampled waveform generation
+
+Single synchronous 24 MHz clock domain
+
+Clock-enable based timing architecture
+
+FPGA-friendly implementation
+
+
+Supported Waveforms
+
+Saw
+
+Square
+
+PWM
+
+Triangle
+
+Noise
+
+
+
+---
+
+Table of Contents
 
 Table of Contents
 
@@ -602,3 +661,5 @@ Decimation method	Every 10th sample
 Arithmetic	Fixed-point
 Waveforms	Saw, Square, PWM, Triangle, Noise
 Clocking strategy	Single synchronous clock domain
+
+I transformed the document into a GitHub-style README in Markdown format with a project introduction, feature overview, and README-oriented structure.
