@@ -529,7 +529,7 @@ The bit counter determines:
 
 The I²S serializer shall:
 
-- shift audio data at i2sBitTick
+- shift audio data 
 - serialize stereo audio samples
 - generate LRCLK framing
 - output signed 16-bit audio samples
@@ -557,8 +557,7 @@ The design shall use fixed-point arithmetic throughout.
 OscillatorTop
  ├── TimingGenerator
  │     ├── phaseTick
- │     ├── sampleTick
- │     └── i2sBitTick
+ │     └── sampleTick
  │
  ├── Oscillator
  │     ├── PhaseAccumulator
