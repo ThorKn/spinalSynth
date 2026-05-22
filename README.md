@@ -1,4 +1,4 @@
-# SpinalHDL DDS Audio Oscillator
+# Simple Oscillator spinalHDL
 
 ---
 
