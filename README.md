@@ -1,180 +1,82 @@
-SpinalHDL DDS Audio Oscillator
-
-A compact FPGA audio oscillator implemented in SpinalHDL using a DDS (Direct Digital Synthesis) phase accumulator architecture.
-
-The project focuses on:
-
-clean synchronous FPGA design
-
-compact implementation
-
-deterministic timing
-
-oversampled DDS waveform generation
-
-stereo I²S audio output
-
-educational clarity and extensibility
-
-
+# SpinalHDL DDS Audio Oscillator
 
 ---
 
-Features
-
-24-bit DDS phase accumulator
-
-480 kHz internal DDS update rate
-
-48 kHz stereo audio output
-
-16-bit signed audio samples
-
-Stereo I²S output interface
-
-Oversampled waveform generation
-
-Single synchronous 24 MHz clock domain
-
-Clock-enable based timing architecture
-
-FPGA-friendly implementation
-
-
-Supported Waveforms
-
-Saw
-
-Square
-
-PWM
-
-Triangle
-
-Noise
-
-
-
----
-
-Table of Contents
-
-Table of Contents
+## Table of Contents
 
 1. Introduction
-
-
 2. Project Goals
-
-
 3. High-Level Architecture
-
-
 4. Clocking Architecture
-
-
 5. Timing Generators
-
-
 6. DDS Oscillator Architecture
-
-
 7. Waveform Generators
-
-
 8. Oversampling and Decimation
-
-
 9. Audio Sample Format
-
-
 10. I²S Output Interface
-
-
 11. Numeric Formats
-
-
-12. Frequency Calculation
-
-
-13. Frequency Limits and Behavior
-
-
-14. Module Hierarchy
-
-
-15. Design Philosophy
-
-
-16. Confirmed System Parameters
-
-
-
+12. Module Hierarchy
+13. Design Philosophy
+14. Confirmed System Parameters
 
 ---
 
-1. Introduction
+# 1. Introduction
 
 This project implements a compact digital audio oscillator in SpinalHDL.
 
-The oscillator is based on Direct Digital Synthesis (DDS) using a phase accumulator architecture.
+The oscillator is based on Direct Digital Synthesis (DDS) using a phase accumulator architecture. The oscillator generates audio waveforms internally using an oversampled DDS engine and outputs stereo audio using the I²S protocol.
 
 The project is intentionally designed to remain:
 
-compact
+- compact
+- deterministic
+- FPGA-friendly
+- easy to understand
+- easy to simulate
+- easy to extend later
 
-deterministic
+## Features
 
-FPGA-friendly
-
-easy to understand
-
-easy to simulate
-
-easy to extend later
-
-
-The oscillator generates audio waveforms internally using an oversampled DDS engine and outputs stereo audio using the I²S protocol.
-
+- 24-bit DDS phase accumulator
+- 480 kHz internal DDS update rate
+- 48 kHz stereo audio output
+- 16-bit signed audio samples
+- Stereo I²S output interface
+- Oversampled waveform generation
+- Single synchronous 24 MHz clock domain
+- Clock-enable based timing architecture
+- FPGA-friendly implementation
 
 ---
 
-2. Project Goals
+# 2. Project Goals
 
 The design goals are:
 
-Implement a simple DDS-based hardware oscillator
-
-Use a 24-bit phase accumulator
-
-Generate multiple classic synthesizer waveforms
-
-Use oversampling to improve waveform quality
-
-Output stereo digital audio via I²S
-
-Keep the entire design inside a single synchronous FPGA clock domain
-
-Avoid internally-generated FPGA clocks
-
-Use only clock-enable tick signals
-
-
+- Implement a simple DDS-based hardware oscillator
+- Use a 24-bit phase accumulator
+- Generate multiple classic synthesizer waveforms
+- Use oversampling to improve waveform quality
+- Output stereo digital audio via I²S
+- Keep the entire design inside a single synchronous FPGA clock domain
+- Avoid internally-generated FPGA clocks
+- Use only clock-enable tick signals
 
 ---
 
-3. High-Level Architecture
+# 3. High-Level Architecture
 
+```text
 24 MHz Master Clock
         ↓
 TimingGenerator
  ├── phaseTick    (480 kHz)
- ├── sampleTick   (48 kHz)
- └── i2sBitTick   (1.536 MHz)
+ └── sampleTick   (48 kHz)
 
         ↓
 
-DDSOscillator
+Oscillator
  ├── 24-bit Phase Accumulator
  ├── Saw Generator
  ├── Square Generator
@@ -193,221 +95,231 @@ Decimator
 
         ↓
 
-I²STransmitter
+I2STransmitter
  ├── Stereo Output
  ├── LRCLK
  ├── BCLK
  └── SDATA
-
+```
 
 ---
 
-4. Clocking Architecture
+# 4. Clocking Architecture
 
-Master Clock
+## Master Clock
 
 The complete design operates from a single synchronous master clock.
 
-Parameter	Value
-
-Master clock frequency	24 MHz
-
+| Parameter | Value |
+|---|---|
+| Master clock frequency | 24 MHz |
 
 No internally-generated FPGA clocks shall be used.
 
 All submodules shall operate synchronously from the 24 MHz master clock using clock-enable tick signals.
 
-
 ---
 
-5. Timing Generators
+# 5. Timing Generators
 
-The TimingGenerator module shall generate three independent clock-enable tick signals.
+The TimingGenerator module shall generate two independent clock-enable tick signals.
 
-phaseTick
+## phaseTick
 
-Parameter	Value
-
-Frequency	480 kHz
-Divider	24 MHz / 50
-Purpose	Drive DDS phase accumulator
-
+| Parameter | Value |
+|---|---|
+| Frequency | 480 kHz |
+| Divider | 24 MHz / 50 |
+| Purpose | Drive DDS phase accumulator |
 
 The phase accumulator and waveform generation logic shall update on this tick.
 
-
 ---
 
-sampleTick
+## sampleTick
 
-Parameter	Value
-
-Frequency	48 kHz
-Divider	24 MHz / 500
-Purpose	Generate output audio samples
-
+| Parameter | Value |
+|---|---|
+| Frequency | 48 kHz |
+| Divider | 24 MHz / 500 |
+| Purpose | Generate output audio samples |
 
 The decimator and output audio sample registers shall update on this tick.
 
-
 ---
 
-i2sBitTick
-
-Parameter	Value
-
-Frequency	1.536 MHz
-Purpose	Drive I²S serializer
-
-
-Calculation:
-
-48,000 × 2 × 16 = 1.536 MHz
-
-Since 1.536 MHz is not an integer division of 24 MHz, the i2sBitTick shall be generated using a fractional accumulator-based tick generator.
-
-
----
-
-6. DDS Oscillator Architecture
+# 6. DDS Oscillator Architecture
 
 The oscillator shall use a classic DDS architecture.
 
-DDS Core
+## DDS Core
 
 At every phaseTick:
 
+```text
 phase := phase + freqWord
+```
 
 The phase accumulator shall wrap naturally on overflow.
 
-
 ---
 
-Phase Accumulator
+## Phase Accumulator
 
-Parameter	Value
-
-Width	24 bit
-Type	Unsigned
-
+| Parameter | Value |
+|---|---|
+| Width | 24 bit |
+| Type | Unsigned |
 
 Example:
 
+```scala
 val phase = Reg(UInt(24 bits))
-
+```
 
 ---
 
-Frequency Word
+## Frequency Word
 
-Parameter	Value
-
-Width	24 bit
-Type	Unsigned
-
+| Parameter | Value |
+|---|---|
+| Width | 24 bit |
+| Type | Unsigned |
 
 The frequency word controls oscillator frequency.
 
+---
+
+## Frequency Calculation
+
+The DDS frequency equation is:
+
+```text
+f = freqWord × updateRate / 2^24
+```
+
+Where:
+
+| Parameter | Value |
+|---|---|
+| updateRate | 480 kHz |
+| phase width | 24 bit |
 
 ---
 
-7. Waveform Generators
+## Frequency Resolution
+
+The minimum frequency step is:
+
+```text
+480000 / 16777216 ≈ 0.0286 Hz
+```
+
+
+# 7. Waveform Generators
 
 The oscillator shall support the following waveforms.
 
-Saw
+## Saw
 
 Generated by mapping the upper phase bits to audio amplitude.
 
 Example:
 
+```text
 sample = phase[23:8]
-
+```
 
 ---
 
-Square
+## Square
 
 Generated using the phase accumulator MSB.
 
 Example:
 
+```text
 if phase[23] == 1:
     +MAX
 else:
     -MAX
-
+```
 
 ---
 
-PWM
+## PWM
 
 Generated using a comparator between phase and pulseWidth.
 
+The 8-bit PWM width value shall be expanded internally before comparison with the 24-bit phase accumulator.
+
+The expansion shall be implemented by multiplying the PWM width value by 4.
+
 Example:
 
+```text
 if phase < pulseWidth:
     +MAX
 else:
     -MAX
+```
 
-PWM Width
+## PWM Width
 
-Parameter	Value
-
-Width	24 bit
-Type	Unsigned
-
-
+| Parameter | Value |
+|---|---|
+| Width | 8 bit |
+| Type | Unsigned |
 
 ---
 
-Triangle
+## Triangle
 
 Generated using reflected phase arithmetic.
 
 The triangle generator shall derive a linear rising and falling ramp from the phase accumulator.
 
-
 ---
 
-Noise
+## Noise
 
 Noise generation shall use an LFSR-based pseudo-random generator.
 
 Recommended LFSR width:
 
-Parameter	Value
-
-Recommended width	23 or 32 bit
-
+| Parameter | Value |
+|---|---|
+| Recommended width | 23 or 32 bit |
 
 The exact LFSR polynomial is not yet specified.
 
-
 ---
 
-8. Oversampling and Decimation
+# 8. Oversampling and Decimation
 
-Oversampling Strategy
+## Oversampling Strategy
 
 The DDS oscillator shall internally operate at:
 
+```text
 480 kHz
+```
 
 while the final audio output sample rate shall be:
 
+```text
 48 kHz
+```
 
 This creates an oversampling ratio of:
 
+```text
 10×
-
+```
 
 ---
 
-Decimation Strategy
+## Decimation Strategy
 
 The implementation shall use simple zero-order decimation.
 
@@ -417,25 +329,27 @@ No interpolation or low-pass filtering shall initially be used.
 
 Example:
 
+```text
 if(sampleTick) {
     audioSample := oscSample
 }
-
+```
 
 ---
 
-9. Audio Sample Format
+# 9. Audio Sample Format
 
-Parameter	Value
-
-Audio width	16 bit
-Sample format	Signed
-Sample rate	48 kHz
-
+| Parameter | Value |
+|---|---|
+| Audio width | 16 bit |
+| Sample format | Signed |
+| Sample rate | 48 kHz |
 
 Example:
 
+```scala
 val sample = SInt(16 bits)
+```
 
 The oscillator is currently mono internally.
 
@@ -443,158 +357,213 @@ The mono signal shall be duplicated to both stereo output channels.
 
 Example:
 
+```text
 leftSample  = sample
 rightSample = sample
-
-
----
-
-10. I²S Output Interface
-
-The final output interface shall use the I²S protocol.
-
-I²S Audio Format
-
-Parameter	Value
-
-Channels	2
-Audio width	16 bit
-Sample rate	48 kHz
-Bit clock	1.536 MHz
-
-
+```
 
 ---
 
-I²S Signals
+# 10. I²S Output Interface
 
-Signal	Description
+The output interface shall use the I²S protocol.
 
-i2s_bclk	Bit clock
-i2s_lrclk	Left/right word select
-i2s_sdata	Serial audio data
+## I²S Timing Architecture
 
-
+The I²S transmitter shall operate directly from the 24 MHz master clock. The transmitter shall use a cycle-timed state machine architecture.
 
 ---
 
-Serializer Behavior
+## I²S Bit Timing
+
+The required I²S bit clock frequency BCLK is:
+
+```text
+48,000 × 2 × 16 = 1.536 MHz
+```
+
+The relationship to the 24 MHz master clock is:
+
+```text
+24 MHz / 1.536 MHz = 15.625
+```
+
+Therefore no integer divider exists.
+
+The serializer shall therefore alternate between:
+
+- 15 master-clock cycles
+- 16 master-clock cycles
+
+between serialized bit transfers.
+
+---
+
+## I²S Timing Subpattern
+
+The serializer shall use the following repeating 8-step timing subpattern:
+
+```text
+16,16,15,16,16,15,16,15
+```
+
+This subpattern contains:
+
+| Interval | Count |
+|---|---|
+| 16-cycle intervals | 5 |
+| 15-cycle intervals | 3 |
+
+Total clocks:
+
+```text
+16+16+15+16+16+15+16+15 = 125
+```
+
+Average clocks per bit:
+
+```text
+125 / 8 = 15.625
+```
+
+This exactly matches the required average I²S bit timing.
+
+---
+
+## Relationship To LRCLK Period
+
+One stereo I²S frame contains:
+
+```text
+32 serial bits
+```
+
+because:
+
+- 16 left-channel bits
+- 16 right-channel bits
+
+Since:
+
+```text
+32 = 4 × 8
+```
+
+the 8-step timing subpattern repeats exactly four times during one complete stereo frame.
+
+Full frame timing:
+
+```text
+[16,16,15,16,16,15,16,15] × 4
+```
+
+Total master-clock cycles per stereo frame:
+
+```text
+4 × 125 = 500
+```
+
+Stereo frame rate:
+
+```text
+24 MHz / 500 = 48 kHz
+```
+
+This produces the exact required audio sample rate.
+
+---
+
+## I²S Timing State Machine
+
+The serializer shall internally contain:
+
+| Register | Purpose |
+|---|---|
+| cycleCounter | Current interval countdown |
+| patternIndex | Selects 15/16-cycle interval |
+| bitCounter | Counts serialized bits |
+| shiftRegister | Serialized audio data |
+
+The pattern index shall cycle continuously:
+
+```text
+0 → 1 → 2 → ... → 7 → 0
+```
+
+The bit counter shall cycle:
+
+```text
+0 → 1 → 2 → ... → 31 → 0
+```
+
+The bit counter determines:
+
+- LRCLK state
+- stereo frame boundaries
+- sample reload timing
+
+---
+
+## I²S Audio Format
+
+| Parameter | Value |
+|---|---|
+| Channels | 2 |
+| Audio width | 16 bit |
+| Sample rate | 48 kHz |
+| Bit clock | 1.536 MHz |
+
+---
+
+## I²S Signals
+
+| Signal | Description |
+|---|---|
+| i2s_bclk | Bit clock |
+| i2s_lrclk | Left/right word select |
+| i2s_sdata | Serial audio data |
+
+---
+
+## Serializer Behavior
 
 The I²S serializer shall:
 
-shift audio data at i2sBitTick
-
-serialize stereo audio samples
-
-generate LRCLK framing
-
-output signed 16-bit audio samples
-
+- shift audio data at i2sBitTick
+- serialize stereo audio samples
+- generate LRCLK framing
+- output signed 16-bit audio samples
 
 The exact serializer state machine behavior is not yet specified.
 
-
 ---
 
-11. Numeric Formats
+# 11. Numeric Formats
 
-Signal	Type
-
-phase	UInt(24 bits)
-freqWord	UInt(24 bits)
-pulseWidth	UInt(24 bits)
-audioSample	SInt(16 bits)
-
+| Signal | Type |
+|---|---|
+| phase | UInt(24 bits) |
+| freqWord | UInt(24 bits) |
+| pulseWidth | UInt(8 bits) |
+| audioSample | SInt(16 bits) |
 
 The design shall use fixed-point arithmetic throughout.
 
-
 ---
 
-12. Frequency Calculation
+# 12. Module Hierarchy
 
-The DDS frequency equation is:
-
-f = freqWord × updateRate / 2^24
-
-Where:
-
-Parameter	Value
-
-updateRate	480 kHz
-phase width	24 bit
-
-
-
----
-
-Frequency Resolution
-
-The minimum frequency step is:
-
-480000 / 16777216 ≈ 0.0286 Hz
-
-
----
-
-13. Frequency Limits and Behavior
-
-Theoretical Maximum Frequency
-
-The mathematical DDS limit approaches the internal update rate.
-
-≈ 480 kHz
-
-
----
-
-Practical Audio Limit
-
-The final audio output rate is:
-
-48 kHz
-
-Therefore the Nyquist limit is:
-
-24 kHz
-
-Frequencies above Nyquist will alias.
-
-
----
-
-High-Frequency Waveform Behavior
-
-The oscillator is intentionally non-bandlimited.
-
-Therefore:
-
-saw
-
-square
-
-PWM
-
-
-will generate harmonic aliasing at higher frequencies.
-
-This behavior is expected and acceptable for this project.
-
-
----
-
-14. Module Hierarchy
-
+```text
 OscillatorTop
  ├── TimingGenerator
  │     ├── phaseTick
  │     ├── sampleTick
  │     └── i2sBitTick
  │
- ├── DDSOscillator
+ ├── Oscillator
  │     ├── PhaseAccumulator
  │     ├── WaveformGenerator
- │     └── NoiseGenerator
+ │     └── NoiseGenerator 
  │
  ├── Decimator
  │     └── Capture every 10th sample
@@ -603,61 +572,47 @@ OscillatorTop
        ├── LRCLK Generator
        ├── Shift Register
        └── Serial Output
-
+```
 
 ---
 
-15. Design Philosophy
+# 13. Design Philosophy
 
 The oscillator is intentionally designed to:
 
-remain compact
-
-remain deterministic
-
-remain FPGA-efficient
-
-avoid unnecessary complexity
-
-avoid clock-domain crossing
-
-use synchronous FPGA design methodology
-
-prioritize architectural clarity
-
+- remain compact
+- remain deterministic
+- remain FPGA-efficient
+- avoid unnecessary complexity
+- avoid clock-domain crossing
+- use synchronous FPGA design methodology
+- prioritize architectural clarity
 
 The project intentionally does not currently include:
 
-anti-aliasing
-
-PolyBLEP
-
-FIR filtering
-
-interpolation
-
-analog modeling
-
-multi-oscillator polyphony
-
-
+- anti-aliasing
+- PolyBLEP
+- FIR filtering
+- interpolation
+- analog modeling
+- multi-oscillator polyphony
 
 ---
 
-16. Confirmed System Parameters
+# 14. Confirmed System Parameters
 
-Parameter	Value
-
-HDL	SpinalHDL
-Master clock	24 MHz
-DDS phase width	24 bit
-DDS update rate	480 kHz
-Audio sample rate	48 kHz
-Audio width	16 bit signed
-I²S output	Stereo
-I²S bit clock	1.536 MHz
-Oversampling ratio	10×
-Decimation method	Every 10th sample
-Arithmetic	Fixed-point
-Waveforms	Saw, Square, PWM, Triangle, Noise
-Clocking strategy	Single synchronous clock domain
+| Parameter | Value |
+|---|---|
+| HDL | SpinalHDL |
+| Master clock | 24 MHz |
+| DDS phase width | 24 bit |
+| DDS update rate | 480 kHz |
+| Audio sample rate | 48 kHz |
+| Audio width | 16 bit signed |
+| I²S output | Stereo |
+| I²S bit clock | 1.536 MHz |
+| Oversampling ratio | 10× |
+| Decimation method | Every 10th sample |
+| Arithmetic | Fixed-point |
+| Waveforms | Saw, Square, PWM, Triangle, Noise |
+| Clocking strategy | Single synchronous clock domain |
