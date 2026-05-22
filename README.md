@@ -661,5 +661,3 @@ Decimation method	Every 10th sample
 Arithmetic	Fixed-point
 Waveforms	Saw, Square, PWM, Triangle, Noise
 Clocking strategy	Single synchronous clock domain
-
-I transformed the document into a GitHub-style README in Markdown format with a project introduction, feature overview, and README-oriented structure.
