@@ -24,6 +24,7 @@
 
 The spinalHDL implementation shall use the following hierarchy for folders, subfolders and files.
 
+```text
 Simple_Oscillator_SpinalHDL/
 ├── build.sbt                   # SBT build configuration (dependencies, Scala version)
 ├── project/                    # SBT plumbing
@@ -53,6 +54,7 @@ Simple_Oscillator_SpinalHDL/
 ├── doc/                        # Architecture diagrams and design assets
 ├── README.md                   # Project overview (Context File)
 └── Implementation_specs.md     # Technical specification (Context File)
+```
 
 ## 2. OscillatorTop Module
 
