@@ -295,6 +295,8 @@ Noise generation shall use an LFSR-based pseudo-random generator.
 | Output type    | 16-bit signed       |
 | Reset seed     | nonzero fixed value |
 
+An LFSR must never be initialized to zero, as it would stay stuck. We will plan to use a fixed non-zero seed.
+
 The 16-bit signed audio is extracted just by taking the upper 16 bits of the LFSR.
 
 ---
