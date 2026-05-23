@@ -39,3 +39,6 @@ rtl/
 *.json
 *.cf
 *.bin
+
+# ---- Testfiles ----
+simWorkspace/
