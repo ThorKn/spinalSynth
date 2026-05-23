@@ -285,13 +285,15 @@ The triangle generator shall derive a linear rising and falling ramp from the ph
 
 Noise generation shall use an LFSR-based pseudo-random generator.
 
-Recommended LFSR width:
-
-| Parameter | Value |
-|---|---|
-| Recommended width | 23 or 32 bit |
-
-The exact LFSR polynomial is not yet specified.
+| Parameter      | Value               |
+| -------------- | ------------------- |
+| Generator type | Fibonacci LFSR      |
+| Width          | 23 bit              |
+| Polynomial     | x^23 + x^18 + 1     |
+| Feedback taps  | bit 22 XOR bit 17   |
+| Update timing  | `phaseTick`         |
+| Output type    | 16-bit signed       |
+| Reset seed     | nonzero fixed value |
 
 ---
 
