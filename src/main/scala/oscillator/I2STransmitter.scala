@@ -46,7 +46,7 @@ class I2STransmitter extends Component {
     when(nextBit === 0 || nextBit === 16) {
       shiftReg := sampleBuffer.asUInt
     } otherwise {
-      shiftReg := (shiftReg << 1)
+      shiftReg := (shiftReg << 1).resize(16)
     }
   } otherwise {
     cycleCounter := cycleCounter - 1

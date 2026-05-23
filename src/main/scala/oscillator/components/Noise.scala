@@ -19,7 +19,7 @@ class Noise extends Component {
 
   // Shift left and insert the feedback bit at the LSB on every phaseTick.
   when(io.phaseTick) {
-    lfsr := (lfsr(21 downto 0) ## feedback)
+    lfsr := (lfsr(21 downto 0) ## feedback).asUInt
   }
 
   // Output the top 16 bits reinterpreted as a signed integer for the noise sample.
