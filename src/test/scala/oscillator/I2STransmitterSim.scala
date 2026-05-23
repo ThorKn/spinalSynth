@@ -16,27 +16,30 @@ class I2STransmitterSim extends AnyFunSuite {
       dut.clockDomain.waitSamplingWhere(dut.io.lrclk.toBoolean == true)
       dut.clockDomain.waitSamplingWhere(dut.io.lrclk.toBoolean == false)
 
-      // Verify the first few bit intervals (Expected: 16, 16, 15...)
+      // Helper to verify a full BCLK period (falling edge to falling edge)
       def checkBitInterval(expectedCycles: Int) {
         val start = simTime()
-        // Wait for BCLK rising edge (middle of bit) then falling (end of bit)
+        // The interval ends when BCLK completes one high-low cycle
         dut.clockDomain.waitSamplingWhere(dut.io.bclk.toBoolean == true)
         dut.clockDomain.waitSamplingWhere(dut.io.bclk.toBoolean == false)
         dut.clockDomain.waitSamplingWhere(dut.io.bclk.toBoolean == true)
         val stop = simTime()
-        print("start:", start)
-        print("stop:", stop)
+        
         val interval = (stop - start) / 10
         assert(interval == expectedCycles, s"Expected $expectedCycles cycles for bit, got $interval")
       }
 
+      // Verify the complete 8-step timing pattern
       checkBitInterval(16)
       checkBitInterval(16)
       checkBitInterval(15)
       checkBitInterval(16)
+      checkBitInterval(16)
+      checkBitInterval(15)
+      checkBitInterval(16)
+      checkBitInterval(15)
 
-      // Verify full frame duration
-       // Align to LRCLK transition (start of frame)
+      // Verify full frame duration (4 repeats of the 8-step pattern = 500 cycles)
       dut.clockDomain.waitSamplingWhere(dut.io.lrclk.toBoolean == true)
       dut.clockDomain.waitSamplingWhere(dut.io.lrclk.toBoolean == false)
       val frameStart = simTime()
