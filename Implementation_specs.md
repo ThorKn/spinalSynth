@@ -20,17 +20,39 @@
 5. Decimator
 6. I2STransmitter
 
-## 1. RTL Hierarchy
+## 1. spinalHDL Hierarchy
 
-The RTL implementation shall use the following module hierarchy.
+The spinalHDL implementation shall use the following hierarchy for folders, subfolders and files.
 
-```text
-OscillatorTop
- ├── TimingGenerator
- ├── Oscillator
- ├── Decimator
- └── I2STransmitter
-```
+Simple_Oscillator_SpinalHDL/
+├── build.sbt                   # SBT build configuration (dependencies, Scala version)
+├── project/                    # SBT plumbing
+│   └── build.properties        # Defines the SBT version
+├── src/
+│   ├── main/
+│   │   └── scala/
+│   │       └── oscillator/     # Root package for the project
+│   │           ├── OscillatorTop.scala     # Top-level integration (per Section 2)
+│   │           ├── TimingGenerator.scala   # Tick generation logic (per Section 3)
+│   │           ├── Oscillator.scala        # Main Oscillator module (per Section 4)
+│   │           ├── components/             # Submodules of the Oscillator
+│   │           │   ├── Accumulator.scala   # Phase logic
+│   │           │   ├── Noise.scala         # LFSR logic
+│   │           │   ├── Generators.scala    # Waveform logic (Saw, Tri, etc.)
+│   │           │   └── Mux.scala           # Waveform selection
+│   │           ├── Decimator.scala         # 10x downsampling (per Section 5)
+│   │           └── I2STransmitter.scala    # I2S protocol engine (per Section 6)
+│   └── test/
+│       └── scala/
+│           └── oscillator/     # SpinalSim testbenches
+│               ├── OscillatorTopSim.scala  # Full system simulation
+│               ├── TimingSim.scala         # Verifying tick precision
+│               ├── WaveformSim.scala       # Verifying Generator math
+│               └── I2STransmitterSim.scala # Verifying I2S timing/protocol
+├── rtl/                        # Output folder for generated Verilog/VHDL files
+├── doc/                        # Architecture diagrams and design assets
+├── README.md                   # Project overview (Context File)
+└── Implementation_specs.md     # Technical specification (Context File)
 
 ## 2. OscillatorTop Module
 
