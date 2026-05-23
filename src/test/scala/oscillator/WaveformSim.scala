@@ -28,18 +28,19 @@ class WaveformSim extends AnyFunSuite {
       check(0x000000, -32768, -32768, "Start (Phase 0)")
 
       // Quarter Cycle (0x400000)
-      // Saw is at 0 (midway through positive ramp)
+      // Saw is at -16384 (midway through negative-to-zero ramp)
       // Triangle is at 0 (rising)
-      check(0x400000, 0, 0, "Quarter Cycle")
+      check(0x400000, -16384, 0, "Quarter Cycle")
 
-      // Just before Half Cycle (0x7FFFFF)
-      // Saw is at positive peak (32767)
-      // Triangle is at positive peak (32767)
-      check(0x7FFFFF, 32767, 32767, "Pre-Half Cycle")
+      // Half Cycle (0x800000)
+      // Saw crosses zero
+      // Triangle reaches positive peak (32767)
+      check(0x800000, 0, 32767, "Half Cycle")
 
       // Three-Quarter Cycle (0xC00000)
-      // Triangle is back at 0 (falling)
-      check(0xC00000, 0, 0, "3/4 Cycle")
+      // Saw is at 16384
+      // Triangle is back at -1 (falling)
+      check(0xC00000, 16384, -1, "3/4 Cycle")
     }
   }
 }
