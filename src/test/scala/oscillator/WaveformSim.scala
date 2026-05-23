@@ -1,0 +1,45 @@
+package oscillator.components
+
+import spinal.core.sim._
+import org.scalatest.funsuite.AnyFunSuite
+
+class WaveformSim extends AnyFunSuite {
+  test("Waveform Generator mathematical verification") {
+    SimConfig.compile(new Generators).doSim { dut =>
+      
+      // Helper to check waveforms at a specific phase
+      def check(phase: Long, expectedSaw: Int, expectedTri: Int, label: String) {
+        dut.io.phase #= phase
+        sleep(1) // Combinational settling
+        
+        val saw = dut.io.sawWave.toInt
+        val tri = dut.io.triWave.toInt
+        
+        println(f"[$label%-15s] Phase: 0x$phase%06X | Saw: $saw%6d | Tri: $tri%6d")
+        assert(saw == expectedSaw, s"$label Saw mismatch")
+        assert(tri == expectedTri, s"$label Tri mismatch")
+      }
+
+      println("Verifying Waveform Peaks and Zero-Crossings:")
+      
+      // Phase 0: Start of cycle
+      // Saw starts at negative peak due to MSB flip.
+      // Triangle starts at negative peak.
+      check(0x000000, -32768, -32768, "Start (Phase 0)")
+
+      // Quarter Cycle (0x400000)
+      // Saw is at 0 (midway through positive ramp)
+      // Triangle is at 0 (rising)
+      check(0x400000, 0, 0, "Quarter Cycle")
+
+      // Just before Half Cycle (0x7FFFFF)
+      // Saw is at positive peak (32767)
+      // Triangle is at positive peak (32767)
+      check(0x7FFFFF, 32767, 32767, "Pre-Half Cycle")
+
+      // Three-Quarter Cycle (0xC00000)
+      // Triangle is back at 0 (falling)
+      check(0xC00000, 0, 0, "3/4 Cycle")
+    }
+  }
+}

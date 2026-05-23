@@ -19,5 +19,6 @@ fork := true
 scalacOptions ++= Seq(
   "-deprecation",
   "-feature",
-  "-unchecked"
+  "-unchecked",
+  "-language:reflectiveCalls"
 )

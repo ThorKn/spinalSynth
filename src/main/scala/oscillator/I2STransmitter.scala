@@ -24,18 +24,22 @@ class I2STransmitter extends Component {
   val shiftReg     = Reg(UInt(16 bits)) init(0)
   val sampleBuffer = Reg(SInt(16 bits)) init(0)
 
-  // Buffer the mono sample from the decimator.
-  // This sample is used for both Left and Right channels to produce stereo output.
-  when(io.valid) {
-    sampleBuffer := io.sampleIn
-  }
-
   // State machine logic operating at 24 MHz
-  when(cycleCounter === 0) {
+  // The 'valid' pulse from the Decimator is used as a master synchronization signal
+  // to ensure the I2S frame starts exactly when a new sample is ready.
+  
+  when(io.valid) {
+    // Synchronize frame: Start of Left channel (bit 0)
+    sampleBuffer := io.sampleIn
+    bitCounter   := 0
+    patternIndex := 0
+    cycleCounter := patternTable(0) - 1 // Start counting down first bit duration
+    shiftReg     := io.sampleIn.asUInt  // Load MSB immediately for serialization
+  } elsewhen(cycleCounter === 0) {
     // Bit Boundary: Occurs every 15 or 16 cycles as defined by the subpattern.
     
-    val nextPatternIndex = patternIndex + 1
-    val nextBit = bitCounter + 1
+    val nextPatternIndex = (patternIndex + 1).resize(3)
+    val nextBit = (bitCounter + 1).resize(5)
 
     patternIndex := nextPatternIndex
     cycleCounter := patternTable(nextPatternIndex) - 1
