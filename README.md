@@ -21,6 +21,12 @@
 
 ---
 
+There is an additional document about implementation details:
+
+[Implementation_specs.md](Implementation_specs.md)  
+
+---
+
 # 1. Introduction
 
 This project implements a compact digital audio oscillator in SpinalHDL.
@@ -47,6 +53,12 @@ The project is intentionally designed to remain:
 - Single synchronous 24 MHz clock domain
 - Clock-enable based timing architecture
 - FPGA-friendly implementation
+
+## AI: ChatGPT and Gemini
+
+The project was developed with the heavy usage of AI tools. All the specification documents were created via talking sessions to chatGPT, most of them in voice chat on the mobile with follow ups on the keyboard.
+
+Impementation, debugging and testing happened in VSCode with the Gemini Extension.
 
 ---
 
