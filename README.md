@@ -21,7 +21,7 @@
 
 ---
 
-There is an additional document about implementation details:
+There is an additional document about the implementation details of this project for spinalHDL:
 
 [Implementation_specs.md](Implementation_specs.md)  
 
