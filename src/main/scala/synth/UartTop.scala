@@ -8,23 +8,10 @@ import synth.uart._
 class UartTop extends Component {
 
   val io = new Bundle {
-
-    // ------------------------------------------------------------------------
-    // System Clock and Reset
-    // ------------------------------------------------------------------------
-
     val clk24MHz = in Bool()
     val reset    = in Bool()
 
-    // ------------------------------------------------------------------------
-    // UART Interface
-    // ------------------------------------------------------------------------
-
     val uartRx   = in Bool()
-
-    // ------------------------------------------------------------------------
-    // I2S Outputs
-    // ------------------------------------------------------------------------
 
     val i2sBclk  = out Bool()
     val i2sLrclk = out Bool()
@@ -48,7 +35,7 @@ class UartTop extends Component {
     val uartRxModule      = new UartRx()
     val protocolDecoder   = new UartProtocolDecoder()
     val registerBank      = new RegisterBank()
-    val oscillatorWrapper = new OscillatorWrapper()
+    val oscillator        = new OscillatorTop()
 
     uartRxModule.io.rx := io.uartRx
 
@@ -59,13 +46,15 @@ class UartTop extends Component {
     registerBank.io.writeAddress := protocolDecoder.io.writeAddress
     registerBank.io.writeData    := protocolDecoder.io.writeData
 
-    oscillatorWrapper.io.oscFrequency  := registerBank.io.oscFrequency
-    oscillatorWrapper.io.oscWaveform   := registerBank.io.oscWaveform
-    oscillatorWrapper.io.oscPulseWidth := registerBank.io.oscPulseWidth
-    oscillatorWrapper.io.oscVolume     := registerBank.io.oscVolume
+    // Direct mapping from RegisterBank to OscillatorTop
+    oscillator.io.freqWord   := registerBank.io.oscFrequency
+    oscillator.io.waveSelect := registerBank.io.oscWaveform(2 downto 0)
+    oscillator.io.pwmWidth   := registerBank.io.oscPulseWidth
+    // Note: registerBank.io.oscVolume is currently unused by OscillatorTop
 
-    io.i2sBclk  := oscillatorWrapper.io.i2s_bclk
-    io.i2sLrclk := oscillatorWrapper.io.i2s_lrclk
-    io.i2sData  := oscillatorWrapper.io.i2s_sdata
+    // Map I2S signals to external pins
+    io.i2sBclk  := oscillator.io.i2s_bclk
+    io.i2sLrclk := oscillator.io.i2s_lrclk
+    io.i2sData  := oscillator.io.i2s_sdata
   }
 }

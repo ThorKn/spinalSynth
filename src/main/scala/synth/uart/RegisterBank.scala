@@ -24,7 +24,6 @@ class RegisterBank extends Component {
   val freqLowReg    = Reg(Bits(8 bits)) init(0)
   val freqMidReg    = Reg(Bits(8 bits)) init(0)
   val freqHighReg   = Reg(Bits(8 bits)) init(0)
-
   val waveformReg   = Reg(Bits(8 bits)) init(0)
   val pulseWidthReg = Reg(Bits(8 bits)) init(0)
   val volumeReg     = Reg(Bits(8 bits)) init(0)
