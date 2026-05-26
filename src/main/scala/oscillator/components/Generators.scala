@@ -23,7 +23,7 @@ class Generators extends Component {
 
   // PWM: Compare phase against the expanded pulse width.
   // Per spec: expand 8-bit pwmWidth by multiplying by 4 (shift left 2).
-  val expandedPwm = (io.pwmWidth << 2).resize(24 bits)
+  val expandedPwm = (io.pwmWidth << 16).resize(24 bits)
   io.pwmWave := Mux(io.phase < expandedPwm, S(32767, 16 bits), S(-32768, 16 bits))
 
   // Triangle: Reflected phase arithmetic.
