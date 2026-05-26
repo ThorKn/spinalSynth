@@ -34,6 +34,7 @@ class Synth extends Component {
   // System Integration Area
   val core = new ClockingArea(coreClockDomain) {
 
+    // UART and registers
     val uartRxModule      = new UartRx()
     val protocolDecoder   = new UartProtocolDecoder()
     val registerBank      = new RegisterBank()
