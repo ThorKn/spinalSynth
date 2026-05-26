@@ -4,8 +4,10 @@ import spinal.core._
 import spinal.lib._
 
 import synth.uart._
+import synth.oscillator.Oscillator
+import synth.output._
 
-class UartTop extends Component {
+class Synth extends Component {
 
   val io = new Bundle {
     val clk24MHz = in Bool()
@@ -35,26 +37,43 @@ class UartTop extends Component {
     val uartRxModule      = new UartRx()
     val protocolDecoder   = new UartProtocolDecoder()
     val registerBank      = new RegisterBank()
-    val oscillator        = new OscillatorTop()
+    
+    // Synthesis and Output Modules
+    val timingGen         = new TimingGenerator()
+    val oscillator        = new Oscillator()
+    val decimator         = new Decimator()
+    val transmitter       = new I2STransmitter()
 
+    // --- UART Control Path ---
     uartRxModule.io.rx := io.uartRx
-
     protocolDecoder.io.rxData      := uartRxModule.io.data
     protocolDecoder.io.rxDataValid := uartRxModule.io.dataValid
-
     registerBank.io.writeEnable  := protocolDecoder.io.writeEnable
     registerBank.io.writeAddress := protocolDecoder.io.writeAddress
     registerBank.io.writeData    := protocolDecoder.io.writeData
 
-    // Direct mapping from RegisterBank to OscillatorTop
+    // --- Synthesis Engine Wiring ---
+    
+    // 1. Timing Distribution
+    oscillator.io.phaseTick := timingGen.io.phaseTick
+    decimator.io.phaseTick  := timingGen.io.phaseTick
+    decimator.io.sampleTick := timingGen.io.sampleTick
+
+    // 2. Control Signals (Register Bank -> Oscillator)
     oscillator.io.freqWord   := registerBank.io.oscFrequency
     oscillator.io.waveSelect := registerBank.io.oscWaveform(2 downto 0)
     oscillator.io.pwmWidth   := registerBank.io.oscPulseWidth
-    // Note: registerBank.io.oscVolume is currently unused by OscillatorTop
 
-    // Map I2S signals to external pins
-    io.i2sBclk  := oscillator.io.i2s_bclk
-    io.i2sLrclk := oscillator.io.i2s_lrclk
-    io.i2sData  := oscillator.io.i2s_sdata
+    // 3. Audio Data Path
+    // Oscillator (480kHz) -> Decimator -> I2S Transmitter (48kHz)
+    decimator.io.sampleIn   := oscillator.io.sample
+    
+    transmitter.io.sampleIn := decimator.io.sampleOut
+    transmitter.io.valid    := decimator.io.valid
+
+    // --- External Output Mapping ---
+    io.i2sBclk  := transmitter.io.bclk
+    io.i2sLrclk := transmitter.io.lrclk
+    io.i2sData  := transmitter.io.sdata
   }
 }

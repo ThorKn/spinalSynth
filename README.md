@@ -573,7 +573,7 @@ The design shall use fixed-point arithmetic throughout.
 # 12. Module Hierarchy
 
 ```text
-OscillatorTop
+Synth
  ├── TimingGenerator
  │     ├── phaseTick
  │     └── sampleTick

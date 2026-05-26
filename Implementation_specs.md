@@ -33,7 +33,7 @@ Simple_Oscillator_SpinalHDL/
 │   ├── main/
 │   │   └── scala/
 │   │       └── synth/          # Root package for the project
-│   │           ├── OscillatorTop.scala     # Top-level integration (per Section 2)
+│   │           ├── Synth.scala             # Top-level System Integration (per Section 2)
 │   │           ├── TimingGenerator.scala   # Tick generation logic (per Section 3)
 │   │           ├── oscillator/             # Core Oscillator logic (per Section 4)
 │   │           │   ├── Oscillator.scala    # Main Oscillator module
@@ -59,15 +59,17 @@ Simple_Oscillator_SpinalHDL/
 └── Implementation_specs.md     # Technical specification (Context File)
 ```
 
-## 2. OscillatorTop Module
+## 2. Synth (System Top) Module
 
 ### Purpose
 
-The OscillatorTop module is the top-level integration entity of the complete oscillator system.
+The Synth module is the hardware entry point and system integration entity.
 
 The module shall:
 
-- instantiate all submodules
+- Manage the 24MHz ClockDomain and Async Reset
+- Instantiate UART control (Rx, Decoder, Registers)
+- Instantiate the Synthesis Engine (Timing, Oscillator, Output)
 - connect subsystem interfaces
 - expose the external hardware interface
 - contain no DSP or protocol implementation details

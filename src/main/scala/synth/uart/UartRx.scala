@@ -6,11 +6,9 @@ import spinal.lib._
 class UartRx extends Component {
 
   val io = new Bundle {
-
     val rx        = in Bool()
     val data      = out Bits(8 bits)
     val dataValid = out Bool()
-
   }
 
   // --------------------------------------------------------------------------
