@@ -98,8 +98,9 @@ synth/ (Root package)
 
         ↓
 
-Decimator
- └── Capture every 10th DDS sample
+output/ (Sub-package)
+ └── Decimator
+ └── I2STransmitter
 
         ↓
 
@@ -585,8 +586,10 @@ OscillatorTop
  │                 ├── Noise
  │                 └── Mux
  │
- ├── Decimator
- │     └── Capture every 10th sample
+ ├── synth/ (Output Pipeline)
+ │     └── output/
+ │           ├── Decimator
+ │           └── I2STransmitter
  │
  └── I2STransmitter
        ├── LRCLK Generator

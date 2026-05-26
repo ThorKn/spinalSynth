@@ -3,6 +3,8 @@ package synth
 import spinal.core._
 import spinal.lib._
 import synth.oscillator.Oscillator
+import synth.output.Decimator
+import synth.output.I2STransmitter
 
 class OscillatorTop extends Component {
   val io = new Bundle {

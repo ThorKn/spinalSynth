@@ -41,15 +41,18 @@ Simple_Oscillator_SpinalHDL/
 │   │           │   ├── Noise.scala         # LFSR logic
 │   │           │   ├── Generators.scala    # Waveform logic (Saw, Tri, etc.)
 │   │           │   └── Mux.scala           # Waveform selection
-│   │           ├── Decimator.scala         # 10x downsampling (per Section 5)
-│   │           └── I2STransmitter.scala    # I2S protocol engine (per Section 6)
+│   │           ├── output/                 # Audio output pipeline
+│   │           │   ├── Decimator.scala     # 10x downsampling (per Section 5)
+│   │           │   └── I2STransmitter.scala # I2S protocol engine (per Section 6)
 │   └── test/
 │       └── scala/
 │           └── synth/          # SpinalSim testbenches
 │               ├── OscillatorTopSim.scala  # Full system simulation
 │               ├── TimingSim.scala         # Verifying tick precision
-│               ├── WaveformSim.scala       # Verifying Generator math
-│               └── I2STransmitterSim.scala # Verifying I2S timing/protocol
+│               ├── oscillator/
+│               │   └── WaveformSim.scala   # Verifying Generator math
+│               └── output/
+│                   └── I2STransmitterSim.scala # Verifying I2S timing/protocol
 ├── rtl/                        # Output folder for generated Verilog/VHDL files
 ├── doc/                        # Architecture diagrams and design assets
 ├── README.md                   # Project overview (Context File)
