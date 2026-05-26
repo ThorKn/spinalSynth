@@ -1,7 +1,8 @@
-package oscillator
+package synth
 
 import spinal.core._
 import spinal.lib._
+import synth.oscillator.Oscillator
 
 class OscillatorTop extends Component {
   val io = new Bundle {

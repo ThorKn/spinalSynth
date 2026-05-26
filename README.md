@@ -88,13 +88,13 @@ TimingGenerator
 
         ↓
 
-Oscillator
- ├── 24-bit Phase Accumulator
- ├── Saw Generator
- ├── Square Generator
- ├── PWM Generator
- ├── Triangle Generator
- └── Noise Generator
+synth/ (Root package)
+ └── oscillator/ (Sub-package)
+      └── Oscillator
+           ├── Accumulator
+           ├── Generators (Saw, Square, PWM, Tri)
+           ├── Noise
+           └── Mux
 
         ↓
 
@@ -577,10 +577,13 @@ OscillatorTop
  │     ├── phaseTick
  │     └── sampleTick
  │
- ├── Oscillator
- │     ├── PhaseAccumulator
- │     ├── WaveformGenerator
- │     └── NoiseGenerator 
+ ├── synth/ (Core Engine)
+ │     └── oscillator/
+ │           └── Oscillator
+ │                 ├── Accumulator
+ │                 ├── Generators 
+ │                 ├── Noise
+ │                 └── Mux
  │
  ├── Decimator
  │     └── Capture every 10th sample

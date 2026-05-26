@@ -1,8 +1,7 @@
-package oscillator
+package synth.oscillator
 
 import spinal.core._
 import spinal.lib._
-import oscillator.components._
 
 class Oscillator extends Component {
   val io = new Bundle {
@@ -13,7 +12,7 @@ class Oscillator extends Component {
     val sample     = out SInt(16 bits)
   }
 
-  // Instantiate submodules from the components package
+  // Instantiate submodules within the same package
   val accumulator = new Accumulator()
   val generators  = new Generators()
   val noise       = new Noise()

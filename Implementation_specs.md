@@ -32,11 +32,11 @@ Simple_Oscillator_SpinalHDL/
 ├── src/
 │   ├── main/
 │   │   └── scala/
-│   │       └── oscillator/     # Root package for the project
+│   │       └── synth/          # Root package for the project
 │   │           ├── OscillatorTop.scala     # Top-level integration (per Section 2)
 │   │           ├── TimingGenerator.scala   # Tick generation logic (per Section 3)
-│   │           ├── Oscillator.scala        # Main Oscillator module (per Section 4)
-│   │           ├── components/             # Submodules of the Oscillator
+│   │           ├── oscillator/             # Core Oscillator logic (per Section 4)
+│   │           │   ├── Oscillator.scala    # Main Oscillator module
 │   │           │   ├── Accumulator.scala   # Phase logic
 │   │           │   ├── Noise.scala         # LFSR logic
 │   │           │   ├── Generators.scala    # Waveform logic (Saw, Tri, etc.)
@@ -45,7 +45,7 @@ Simple_Oscillator_SpinalHDL/
 │   │           └── I2STransmitter.scala    # I2S protocol engine (per Section 6)
 │   └── test/
 │       └── scala/
-│           └── oscillator/     # SpinalSim testbenches
+│           └── synth/          # SpinalSim testbenches
 │               ├── OscillatorTopSim.scala  # Full system simulation
 │               ├── TimingSim.scala         # Verifying tick precision
 │               ├── WaveformSim.scala       # Verifying Generator math
@@ -315,4 +315,3 @@ The serializer uses the scheduled timing subpattern:
 to generate the required average I²S bit timing.
 
 ##
-

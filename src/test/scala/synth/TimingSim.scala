@@ -1,4 +1,4 @@
-package oscillator
+package synth
 
 import spinal.core.sim._
 import org.scalatest.funsuite.AnyFunSuite

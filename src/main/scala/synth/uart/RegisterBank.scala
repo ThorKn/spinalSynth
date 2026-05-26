@@ -1,4 +1,4 @@
-package oscillator.uart
+package synth.uart
 
 import spinal.core._
 import spinal.lib._

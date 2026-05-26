@@ -1,9 +1,9 @@
-package oscillator.uart
+package synth.uart
 
 import spinal.core._
 import spinal.lib._
 
-import oscillator.OscillatorTop
+import synth.OscillatorTop
 
 class OscillatorWrapper extends Component {
 

@@ -1,9 +1,9 @@
-package oscillator
+package synth
 
 import spinal.core._
 import spinal.lib._
 
-import oscillator.uart._
+import synth.uart._
 
 class UartTop extends Component {
 

@@ -1,4 +1,4 @@
-package oscillator.components
+package synth.oscillator
 
 import spinal.core._
 import spinal.lib._
