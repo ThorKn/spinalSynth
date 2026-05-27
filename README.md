@@ -153,9 +153,18 @@ The system is controlled via a standard UART interface. An external controller (
 
 The `UartProtocolDecoder` expects a 3-byte sequence for every command:
 
-1. **Command/Address Byte**: Specifies which register to write to.
+1. **Command Byte**: One byte for the command. (i.e. 0x01 for "write to register")
+2. **Address Byte**: Specifies which register to write to.
 2. **Data Byte**: The value to be written.
-3. **Reserved/Padding**: Currently used for frame alignment.
+
+## Command list
+
+Right now there is only one command.
+
+| Command | Name | Adress Byte | Data Byte |
+|---|---|---|---|
+| `0x01` | `WriteRegister` | `From Register Map` | `1 Byte` |
+
 
 ## Register Map
 
@@ -167,11 +176,6 @@ The `UartProtocolDecoder` expects a 3-byte sequence for every command:
 | `0x03` | `WAVE_SEL` | 0:Saw, 1:Square, 2:PWM, 3:Triangle, 4:Noise | 3 bit |
 | `0x04` | `PWM_WIDTH` | Duty cycle for PWM waveform | 8 bit |
 | `0x05` | `VOLUME` | Master output volume (Reserved) | 8 bit |
-
-### Atomic Frequency Updates
-To prevent the oscillator from producing audible glitches or "sweeping" through incorrect frequencies while the 24-bit frequency word is being updated, the `RegisterBank` implements an atomic latch. 
-
-Changes to `FREQ_LOW` and `FREQ_MID` are stored in temporary buffers and only applied to the active DDS engine when a write to `FREQ_HIGH` (`0x02`) is received.
 
 ---
 
