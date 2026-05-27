@@ -2,6 +2,7 @@ package synth.uart
 
 import spinal.core._
 import spinal.lib._
+import spinal.lib.fsm._
 import synth.RegisterWrite
 
 class UartProtocolDecoder extends Component {
@@ -11,86 +12,48 @@ class UartProtocolDecoder extends Component {
     val regWrite = master(Flow(RegisterWrite()))
   }
 
-  // --------------------------------------------------------------------------
-  // FSM State Definition
-  // --------------------------------------------------------------------------
-
-  object State extends SpinalEnum {
-    val WAIT_CMD, WAIT_ADDR, WAIT_DATA = newElement()
-  }
-
-  val state = Reg(State()) init(State.WAIT_CMD)
-
-  // --------------------------------------------------------------------------
-  // Internal Registers
-  // --------------------------------------------------------------------------
-
-  val addressReg = Reg(UInt(8 bits)) init(0)
-
-  val writeEnableReg  = Reg(Bool()) init(False)
+  // 1. Transaction Registers
   val writeAddressReg = Reg(UInt(8 bits)) init(0)
   val writeDataReg    = Reg(Bits(8 bits)) init(0)
+  val writeEnableReg  = Reg(Bool()) init(False)
 
-  // --------------------------------------------------------------------------
-  // Default Outputs
-  // --------------------------------------------------------------------------
-
+  // 2. Drive Outputs
   io.regWrite.payload.address := writeAddressReg
   io.regWrite.payload.data    := writeDataReg
   io.regWrite.valid           := writeEnableReg
 
-  // writeEnable is a one-clock pulse
+  // Keep writeEnable as a one-clock pulse by default
   writeEnableReg := False
 
-  // --------------------------------------------------------------------------
-  // FSM
-  // --------------------------------------------------------------------------
+  // 3. Declarative State Machine
+  val fsm = new StateMachine {
+    val WAIT_CMD  = new State with EntryPoint
+    val WAIT_ADDR = new State
+    val WAIT_DATA = new State
 
-  switch(state) {
+    val addressBuffer = Reg(UInt(8 bits)) init(0)
 
-    // ------------------------------------------------------------------------
-    // WAIT FOR COMMAND BYTE
-    // ------------------------------------------------------------------------
-
-    is(State.WAIT_CMD) {
-
+    WAIT_CMD.whenIsActive {
       when(io.rxByte.valid) {
-
-        // Only command 0x01 is supported
         when(io.rxByte.payload === B"8'x01") {
-          state := State.WAIT_ADDR
+          goto(WAIT_ADDR)
         }
       }
     }
 
-    // ------------------------------------------------------------------------
-    // WAIT FOR ADDRESS BYTE
-    // ------------------------------------------------------------------------
-
-    is(State.WAIT_ADDR) {
-
+    WAIT_ADDR.whenIsActive {
       when(io.rxByte.valid) {
-
-        addressReg := io.rxByte.payload.asUInt
-
-        state := State.WAIT_DATA
+        addressBuffer := io.rxByte.payload.asUInt
+        goto(WAIT_DATA)
       }
     }
 
-    // ------------------------------------------------------------------------
-    // WAIT FOR DATA BYTE
-    // ------------------------------------------------------------------------
-
-    is(State.WAIT_DATA) {
-
+    WAIT_DATA.whenIsActive {
       when(io.rxByte.valid) {
-
-        writeAddressReg := addressReg
+        writeAddressReg := addressBuffer
         writeDataReg    := io.rxByte.payload
-
-        writeEnableReg := True
-
-        state := State.WAIT_CMD
+        writeEnableReg  := True
+        goto(WAIT_CMD)
       }
     }
   }
