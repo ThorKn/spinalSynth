@@ -1,25 +1,23 @@
-package oscillator
+package synth
 
 import spinal.core._
 import spinal.core.sim._
 import org.scalatest.funsuite.AnyFunSuite
 
-class OscillatorTopSim extends AnyFunSuite {
-  test("OscillatorTop end-to-end I2S verification") {
+class SynthSim extends AnyFunSuite {
+  test("Synth end-to-end I2S verification") {
     // Using a simulation frequency of 24MHz (period = 41.67ns)
     // We'll use 10 units as the half-period for simplicity in the sim
-    SimConfig.withWave.compile(new OscillatorTop).doSim { dut =>
+    SimConfig.withWave.compile(new Synth).doSim { dut =>
       // 1. Initialize Inputs
-      dut.io.clk #= false
+      dut.io.clk24MHz #= false
       dut.io.reset #= true
-      dut.io.freqWord #= 34953 // ~1000 Hz: (1000 * 2^24) / 480000
-      dut.io.waveSelect #= 0   // Sawtooth
-      dut.io.pwmWidth #= 128
+      dut.io.uartRx #= true
 
       // 2. Clock Generator (24 MHz)
       fork {
         while (true) {
-          dut.io.clk #= !dut.io.clk.toBoolean
+          dut.io.clk24MHz #= !dut.io.clk24MHz.toBoolean
           sleep(5) // 10 units per full cycle
         }
       }
@@ -35,8 +33,8 @@ class OscillatorTopSim extends AnyFunSuite {
 
       fork {
         // Align with the start of a Left-channel frame (LRCLK goes Low)
-        waitUntil(dut.io.i2s_lrclk.toBoolean == true)
-        waitUntil(dut.io.i2s_lrclk.toBoolean == false)
+        waitUntil(dut.io.i2sLrclk.toBoolean == true)
+        waitUntil(dut.io.i2sLrclk.toBoolean == false)
         waitUntil(dut.io.i2s_lrclk.toBoolean == true)
         waitUntil(dut.io.i2s_lrclk.toBoolean == false)
 
@@ -48,16 +46,16 @@ class OscillatorTopSim extends AnyFunSuite {
 
           // Capture Left Channel (16 bits)
           for (i <- 0 until 16) {
-            waitUntil(dut.io.i2s_bclk.toBoolean == true) // Sample on rising edge
-            leftRaw = (leftRaw << 1) | (if (dut.io.i2s_sdata.toBoolean) 1 else 0)
-            waitUntil(dut.io.i2s_bclk.toBoolean == false)
+            waitUntil(dut.io.i2sBclk.toBoolean == true) // Sample on rising edge
+            leftRaw = (leftRaw << 1) | (if (dut.io.i2sData.toBoolean) 1 else 0)
+            waitUntil(dut.io.i2sBclk.toBoolean == false)
           }
 
           // Capture Right Channel (16 bits)
           for (i <- 0 until 16) {
-            waitUntil(dut.io.i2s_bclk.toBoolean == true)
-            rightRaw = (rightRaw << 1) | (if (dut.io.i2s_sdata.toBoolean) 1 else 0)
-            waitUntil(dut.io.i2s_bclk.toBoolean == false)
+            waitUntil(dut.io.i2sBclk.toBoolean == true)
+            rightRaw = (rightRaw << 1) | (if (dut.io.i2sData.toBoolean) 1 else 0)
+            waitUntil(dut.io.i2sBclk.toBoolean == false)
           }
 
           // Convert to Signed 16-bit

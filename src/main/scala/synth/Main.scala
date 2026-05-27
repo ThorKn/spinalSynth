@@ -1,4 +1,4 @@
-package oscillator
+package synth
 
 import spinal.core._
 
@@ -9,6 +9,6 @@ object Main {
       targetDirectory = "rtl",
       defaultConfigForClockDomains = ClockDomainConfig(resetActiveLevel = HIGH)
     )
-    config.generateVerilog(new OscillatorTop)
+    config.generateVerilog(new Synth)
   }
 }

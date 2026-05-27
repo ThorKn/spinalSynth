@@ -5,7 +5,7 @@ lazy val root = (project in file("."))
     name := "Simple-Oscillator",
     version := "0.1.0",
     scalaVersion := "2.13.14",
-    Compile / run / mainClass := Some("oscillator.Main"),
+    Compile / run / mainClass := Some("synth.Main"),
     libraryDependencies ++= Seq(
       "com.github.spinalhdl" %% "spinalhdl-core" % spinalVersion,
       "com.github.spinalhdl" %% "spinalhdl-lib" % spinalVersion,

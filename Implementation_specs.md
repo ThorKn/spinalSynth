@@ -32,39 +32,44 @@ Simple_Oscillator_SpinalHDL/
 ├── src/
 │   ├── main/
 │   │   └── scala/
-│   │       └── oscillator/     # Root package for the project
-│   │           ├── OscillatorTop.scala     # Top-level integration (per Section 2)
+│   │       └── synth/          # Root package for the project
+│   │           ├── Synth.scala             # Top-level System Integration (per Section 2)
 │   │           ├── TimingGenerator.scala   # Tick generation logic (per Section 3)
-│   │           ├── Oscillator.scala        # Main Oscillator module (per Section 4)
-│   │           ├── components/             # Submodules of the Oscillator
+│   │           ├── oscillator/             # Core Oscillator logic (per Section 4)
+│   │           │   ├── Oscillator.scala    # Main Oscillator module
 │   │           │   ├── Accumulator.scala   # Phase logic
 │   │           │   ├── Noise.scala         # LFSR logic
 │   │           │   ├── Generators.scala    # Waveform logic (Saw, Tri, etc.)
 │   │           │   └── Mux.scala           # Waveform selection
-│   │           ├── Decimator.scala         # 10x downsampling (per Section 5)
-│   │           └── I2STransmitter.scala    # I2S protocol engine (per Section 6)
+│   │           ├── output/                 # Audio output pipeline
+│   │           │   ├── Decimator.scala     # 10x downsampling (per Section 5)
+│   │           │   └── I2STransmitter.scala # I2S protocol engine (per Section 6)
 │   └── test/
 │       └── scala/
-│           └── oscillator/     # SpinalSim testbenches
-│               ├── OscillatorTopSim.scala  # Full system simulation
+│           └── synth/          # SpinalSim testbenches
+│               ├── SynthSim.scala          # Full system simulation
 │               ├── TimingSim.scala         # Verifying tick precision
-│               ├── WaveformSim.scala       # Verifying Generator math
-│               └── I2STransmitterSim.scala # Verifying I2S timing/protocol
+│               ├── oscillator/
+│               │   └── WaveformSim.scala   # Verifying Generator math
+│               └── output/
+│                   └── I2STransmitterSim.scala # Verifying I2S timing/protocol
 ├── rtl/                        # Output folder for generated Verilog/VHDL files
 ├── doc/                        # Architecture diagrams and design assets
 ├── README.md                   # Project overview (Context File)
 └── Implementation_specs.md     # Technical specification (Context File)
 ```
 
-## 2. OscillatorTop Module
+## 2. Synth (System Top) Module
 
 ### Purpose
 
-The OscillatorTop module is the top-level integration entity of the complete oscillator system.
+The Synth module is the hardware entry point and system integration entity.
 
 The module shall:
 
-- instantiate all submodules
+- Manage the 24MHz ClockDomain and Async Reset
+- Instantiate UART control (Rx, Decoder, Registers)
+- Instantiate the Synthesis Engine (Timing, Oscillator, Output)
 - connect subsystem interfaces
 - expose the external hardware interface
 - contain no DSP or protocol implementation details
@@ -315,4 +320,3 @@ The serializer uses the scheduled timing subpattern:
 to generate the required average I²S bit timing.
 
 ##
-

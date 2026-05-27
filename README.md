@@ -1,14 +1,14 @@
-# Simple Oscillator spinalHDL
+# spinalSynth
 
 ---
 
 ## Table of Contents
 
 1. Introduction
-2. Project Goals
-3. High-Level Architecture
-4. Clocking Architecture
-5. Timing Generators
+2. High-Level Architecture
+3. Master Clock
+4. Timing Generators
+5. Communication Protocol
 6. DDS Oscillator Architecture
 7. Waveform Generators
 8. Oversampling and Decimation
@@ -16,8 +16,7 @@
 10. I²S Output Interface
 11. Numeric Formats
 12. Module Hierarchy
-13. Design Philosophy
-14. Confirmed System Parameters
+13. Confirmed System Parameters
 
 ---
 
@@ -29,7 +28,7 @@ There is an additional document about the implementation details of this project
 
 # 1. Introduction
 
-This project implements a compact digital audio oscillator in SpinalHDL.
+This project implements a compact digital audio synthsizer in SpinalHDL.
 
 The oscillator is based on Direct Digital Synthesis (DDS) using a phase accumulator architecture. The oscillator generates audio waveforms internally using an oversampled DDS engine and outputs stereo audio using the I²S protocol.
 
@@ -62,63 +61,40 @@ Impementation, debugging and testing happened in VSCode with the Gemini Extensio
 
 ---
 
-# 2. Project Goals
-
-The design goals are:
-
-- Implement a simple DDS-based hardware oscillator
-- Use a 24-bit phase accumulator
-- Generate multiple classic synthesizer waveforms
-- Use oversampling to improve waveform quality
-- Output stereo digital audio via I²S
-- Keep the entire design inside a single synchronous FPGA clock domain
-- Avoid internally-generated FPGA clocks
-- Use only clock-enable tick signals
-
----
-
-# 3. High-Level Architecture
+# 2. High-Level Architecture
 
 ```text
-24 MHz Master Clock
-        ↓
-TimingGenerator
- ├── phaseTick    (480 kHz)
- └── sampleTick   (48 kHz)
-
-        ↓
-
-Oscillator
- ├── 24-bit Phase Accumulator
- ├── Saw Generator
- ├── Square Generator
- ├── PWM Generator
- ├── Triangle Generator
- └── Noise Generator
-
-        ↓
-
-Decimator
- └── Capture every 10th DDS sample
-
-        ↓
-
-16-bit Audio Sample @ 48 kHz
-
-        ↓
-
-I2STransmitter
- ├── Stereo Output
- ├── LRCLK
- ├── BCLK
- └── SDATA
+External Interface (24MHz Clk, Reset, UART Rx)
+          ↓
+        Synth (Unified Top Module)
+          ↓
+┌───────────────────────────────────────────────┐
+│  UART Control Path (synth.uart)               │
+│  [UartRx] → [ProtocolDecoder] → [RegisterBank]│
+└───────────────┬───────────────────────────────┘
+                │ (Internal Control Bus)
+                ↓
+┌───────────────────────────────────────────────┐
+│  Synthesis Engine                             │
+│  [TimingGenerator]                            │
+│      ↓                                        │
+│  [Oscillator] (synth.oscillator)              │
+│      ↓                                        │
+│  [Decimator]  (synth.output)                  │
+└───────────────┬───────────────────────────────┘
+                │ (48kHz Samples)
+                ↓
+┌───────────────────────────────────────────────┐
+│  I2S Transmitter (synth.output)               │
+│  [BCLK] [LRCLK] [SDATA]                       │
+└───────────────────────────────────────────────┘
+                ↓
+       Stereo Digital Audio
 ```
 
 ---
 
-# 4. Clocking Architecture
-
-## Master Clock
+# 3. Master Clock
 
 The complete design operates from a single synchronous master clock.
 
@@ -132,7 +108,7 @@ All submodules shall operate synchronously from the 24 MHz master clock using cl
 
 ---
 
-# 5. Timing Generators
+# 4. Timing Generators
 
 The TimingGenerator module shall generate two independent clock-enable tick signals.
 
@@ -157,6 +133,45 @@ The phase accumulator and waveform generation logic shall update on this tick.
 | Purpose | Generate output audio samples |
 
 The decimator and output audio sample registers shall update on this tick.
+
+---
+
+# 5. Communication Protocol
+
+The system is controlled via a standard UART interface. An external controller (such as a PC or Microcontroller) sends 3-byte packets to update the internal state of the synthesizer.
+
+## UART Configuration
+
+| Parameter | Value |
+|---|---|
+| Baud Rate | 115,200 |
+| Data Bits | 8 |
+| Parity | None |
+| Stop Bits | 1 |
+
+## Packet Format
+
+The `UartProtocolDecoder` expects a 3-byte sequence for every command:
+
+1. **Command/Address Byte**: Specifies which register to write to.
+2. **Data Byte**: The value to be written.
+3. **Reserved/Padding**: Currently used for frame alignment.
+
+## Register Map
+
+| Address | Register Name | Description | Width |
+|---|---|---|---|
+| `0x00` | `FREQ_LOW` | Frequency Word Bits [7:0] | 8 bit |
+| `0x01` | `FREQ_MID` | Frequency Word Bits [15:8] | 8 bit |
+| `0x02` | `FREQ_HIGH` | Frequency Word Bits [23:16] (Triggers Atomic Update) | 8 bit |
+| `0x03` | `WAVE_SEL` | 0:Saw, 1:Square, 2:PWM, 3:Triangle, 4:Noise | 3 bit |
+| `0x04` | `PWM_WIDTH` | Duty cycle for PWM waveform | 8 bit |
+| `0x05` | `VOLUME` | Master output volume (Reserved) | 8 bit |
+
+### Atomic Frequency Updates
+To prevent the oscillator from producing audible glitches or "sweeping" through incorrect frequencies while the 24-bit frequency word is being updated, the `RegisterBank` implements an atomic latch. 
+
+Changes to `FREQ_LOW` and `FREQ_MID` are stored in temporary buffers and only applied to the active DDS engine when a write to `FREQ_HIGH` (`0x02`) is received.
 
 ---
 
@@ -227,7 +242,6 @@ The minimum frequency step is:
 480000 / 16777216 ≈ 0.0286 Hz
 ```
 
-
 # 7. Waveform Generators
 
 The oscillator shall support the following waveforms.
@@ -265,7 +279,7 @@ Generated using a comparator between phase and pulseWidth.
 
 The 8-bit PWM width value shall be expanded internally before comparison with the 24-bit phase accumulator.
 
-The expansion shall be implemented by multiplying the PWM width value by 4.
+The expansion shall be implemented by shifting the PWM value 16 bits to the left to match 24 bits width.
 
 Example:
 
@@ -572,18 +586,23 @@ The design shall use fixed-point arithmetic throughout.
 # 12. Module Hierarchy
 
 ```text
-OscillatorTop
+Synth
  ├── TimingGenerator
  │     ├── phaseTick
  │     └── sampleTick
  │
- ├── Oscillator
- │     ├── PhaseAccumulator
- │     ├── WaveformGenerator
- │     └── NoiseGenerator 
+ ├── synth/ (Core Engine)
+ │     └── oscillator/
+ │           └── Oscillator
+ │                 ├── Accumulator
+ │                 ├── Generators 
+ │                 ├── Noise
+ │                 └── Mux
  │
- ├── Decimator
- │     └── Capture every 10th sample
+ ├── synth/ (Output Pipeline)
+ │     └── output/
+ │           ├── Decimator
+ │           └── I2STransmitter
  │
  └── I2STransmitter
        ├── LRCLK Generator
@@ -593,30 +612,9 @@ OscillatorTop
 
 ---
 
-# 13. Design Philosophy
-
-The oscillator is intentionally designed to:
-
-- remain compact
-- remain deterministic
-- remain FPGA-efficient
-- avoid unnecessary complexity
-- avoid clock-domain crossing
-- use synchronous FPGA design methodology
-- prioritize architectural clarity
-
-The project intentionally does not currently include:
-
-- anti-aliasing
-- PolyBLEP
-- FIR filtering
-- interpolation
-- analog modeling
-- multi-oscillator polyphony
+# 13. Confirmed System Parameters
 
 ---
-
-# 14. Confirmed System Parameters
 
 | Parameter | Value |
 |---|---|
