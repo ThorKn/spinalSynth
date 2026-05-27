@@ -6,6 +6,7 @@ import spinal.lib._
 import synth.uart._
 import synth.oscillator.Oscillator
 import synth.output._
+import synth.mixing.Attenuator
 
 class Synth extends Component {
 
@@ -42,6 +43,7 @@ class Synth extends Component {
     // Synthesis and Output Modules
     val timingGen         = new TimingGenerator()
     val oscillator        = new Oscillator()
+    val attenuator        = new Attenuator()
     val decimator         = new Decimator()
     val transmitter       = new I2STransmitter()
 
@@ -54,14 +56,17 @@ class Synth extends Component {
 
     // 1. Tick Distribution
     oscillator.io.phaseTick        := timingGen.io.phaseTick
-    decimator.io.sampleTick        := timingGen.io.sampleTick
+    val alignedSampleTick          = Delay(timingGen.io.sampleTick, cycleCount = 1)
+    decimator.io.sampleTick        := alignedSampleTick
 
     // 2. Control Signals (Register Bank -> Oscillator)
     oscillator.io.config           := registerBank.io.config
+    attenuator.io.volume           := registerBank.io.config.volume
 
     // 3. Audio Data Path
-    // Oscillator (480kHz) -> Decimator -> I2S Transmitter (48kHz)
-    oscillator.io.sample           >> decimator.io.sampleIn
+    // Oscillator (480kHz) -> Attenuator -> Decimator -> I2S Transmitter (48kHz)
+    oscillator.io.sample           >> attenuator.io.sampleIn
+    attenuator.io.sampleOut        >> decimator.io.sampleIn
     decimator.io.sampleOut         >> transmitter.io.sampleIn
 
     // --- External Output Mapping ---
