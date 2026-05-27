@@ -34,7 +34,7 @@ class Synth extends Component {
   // System Integration Area
   val core = new ClockingArea(coreClockDomain) {
 
-    // UART and registers
+    // UART and RegisterBank Modules
     val uartRxModule      = new UartRx()
     val protocolDecoder   = new UartProtocolDecoder()
     val registerBank      = new RegisterBank()
@@ -46,31 +46,30 @@ class Synth extends Component {
     val transmitter       = new I2STransmitter()
 
     // --- UART Control Path ---
-    uartRxModule.io.rx := io.uartRx
+    uartRxModule.io.rx             := io.uartRx
     protocolDecoder.io.rxData      := uartRxModule.io.data
     protocolDecoder.io.rxDataValid := uartRxModule.io.dataValid
-    registerBank.io.writeEnable  := protocolDecoder.io.writeEnable
-    registerBank.io.writeAddress := protocolDecoder.io.writeAddress
-    registerBank.io.writeData    := protocolDecoder.io.writeData
+    registerBank.io.writeEnable    := protocolDecoder.io.writeEnable
+    registerBank.io.writeAddress   := protocolDecoder.io.writeAddress
+    registerBank.io.writeData      := protocolDecoder.io.writeData
 
     // --- Synthesis Engine Wiring ---
-    
-    // 1. Timing Distribution
-    oscillator.io.phaseTick := timingGen.io.phaseTick
-    decimator.io.phaseTick  := timingGen.io.phaseTick
-    decimator.io.sampleTick := timingGen.io.sampleTick
+
+    // 1. Tick Distribution
+    oscillator.io.phaseTick        := timingGen.io.phaseTick
+    decimator.io.phaseTick         := timingGen.io.phaseTick
+    decimator.io.sampleTick        := timingGen.io.sampleTick
 
     // 2. Control Signals (Register Bank -> Oscillator)
-    oscillator.io.freqWord   := registerBank.io.oscFrequency
-    oscillator.io.waveSelect := registerBank.io.oscWaveform(2 downto 0)
-    oscillator.io.pwmWidth   := registerBank.io.oscPulseWidth
+    oscillator.io.freqWord         := registerBank.io.oscFrequency
+    oscillator.io.waveSelect       := registerBank.io.oscWaveform(2 downto 0)
+    oscillator.io.pwmWidth         := registerBank.io.oscPulseWidth
 
     // 3. Audio Data Path
     // Oscillator (480kHz) -> Decimator -> I2S Transmitter (48kHz)
-    decimator.io.sampleIn   := oscillator.io.sample
-    
-    transmitter.io.sampleIn := decimator.io.sampleOut
-    transmitter.io.valid    := decimator.io.valid
+    decimator.io.sampleIn          := oscillator.io.sample
+    transmitter.io.sampleIn        := decimator.io.sampleOut
+    transmitter.io.valid           := decimator.io.valid
 
     // --- External Output Mapping ---
     io.i2sBclk  := transmitter.io.bclk

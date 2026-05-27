@@ -1,4 +1,4 @@
-# SpinalHDL Audio Oscillator Implementation Specification
+# spinalSynth: Implementation Specification
 
 ## Table of Contents
 
@@ -30,7 +30,7 @@
 The spinalHDL implementation shall use the following hierarchy for folders, subfolders and files.
 
 ```text
-Simple_Oscillator_SpinalHDL/
+spinalSynth/
 ├── build.sbt                   # SBT build configuration (dependencies, Scala version)
 ├── project/                    # SBT plumbing
 │   └── build.properties        # Defines the SBT version
