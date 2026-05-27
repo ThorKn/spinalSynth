@@ -216,7 +216,7 @@ val io = new Bundle {
     val freqWord  = in UInt(24 bits)
     val waveSelect = in UInt(3 bits)
     val pwmWidth  = in UInt(8 bits)
-    val sample    = out SInt(16 bits)
+    val sample    = master(Flow(SInt(16 bits)))
 }
 ```
 
@@ -332,11 +332,9 @@ Noise ── noiseSample ───┘
 
 ```scala
 val io = new Bundle {
-    val phaseTick  = in Bool()
     val sampleTick = in Bool()
-    val sampleIn   = in SInt(16 bits)
-    val sampleOut  = out SInt(16 bits) 
-    val valid      = out Bool()
+    val sampleIn   = slave(Flow(SInt(16 bits)))
+    val sampleOut  = master(Flow(SInt(16 bits)))
 }
 ```
 
@@ -356,8 +354,7 @@ valid communicates that a new 48 kHz sample is available now.
 
 ```scala
 val io = new Bundle {
-    val sampleIn  = in SInt(16 bits)
-    val valid     = in Bool()
+    val sampleIn  = slave(Flow(SInt(16 bits)))
     val bclk      = out Bool()
     val lrclk     = out Bool()
     val sdata     = out Bool()

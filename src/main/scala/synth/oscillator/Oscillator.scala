@@ -9,7 +9,7 @@ class Oscillator extends Component {
     val freqWord   = in UInt(24 bits)
     val waveSelect = in UInt(3 bits)
     val pwmWidth   = in UInt(8 bits)
-    val sample     = out SInt(16 bits)
+    val sample     = master(Flow(SInt(16 bits)))
   }
 
   // Instantiate submodules within the same package
@@ -37,6 +37,8 @@ class Oscillator extends Component {
   mux.io.triWave    := generators.io.triWave
   mux.io.noiseWave  := noise.io.sample
 
-  // Final output sample
-  io.sample := mux.io.sample
+  // Packaging the output into a Flow. 
+  // The sample is valid only during the phaseTick (480 kHz heartbeat).
+  io.sample.valid   := io.phaseTick
+  io.sample.payload := mux.io.sample
 }

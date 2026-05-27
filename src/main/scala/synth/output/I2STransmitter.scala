@@ -5,8 +5,7 @@ import spinal.lib._
 
 class I2STransmitter extends Component {
   val io = new Bundle {
-    val sampleIn = in SInt(16 bits)
-    val valid    = in Bool()
+    val sampleIn = slave(Flow(SInt(16 bits)))
     val bclk     = out Bool()
     val lrclk    = out Bool()
     val sdata    = out Bool()
@@ -28,13 +27,13 @@ class I2STransmitter extends Component {
   // State machine logic operating at 24 MHz
   // The 'valid' pulse from the Decimator is used as a master synchronization signal
   // to ensure the I2S frame starts exactly when a new sample is ready.
-  when(io.valid) {
+  when(io.sampleIn.valid) {
     // Synchronize frame: Start of Left channel (bit 0)
-    sampleBuffer := io.sampleIn
+    sampleBuffer := io.sampleIn.payload
     bitCounter   := 0
     patternIndex := 0
     cycleCounter := patternTable(0) - 1 // Start counting down first bit duration
-    shiftReg     := io.sampleIn.asUInt  // Load MSB immediately for serialization
+    shiftReg     := io.sampleIn.payload.asUInt  // Load MSB immediately for serialization
     active       := True
   } elsewhen(active) {
     // Standard serialization state machine

@@ -57,7 +57,6 @@ class Synth extends Component {
 
     // 1. Tick Distribution
     oscillator.io.phaseTick        := timingGen.io.phaseTick
-    decimator.io.phaseTick         := timingGen.io.phaseTick
     decimator.io.sampleTick        := timingGen.io.sampleTick
 
     // 2. Control Signals (Register Bank -> Oscillator)
@@ -67,9 +66,8 @@ class Synth extends Component {
 
     // 3. Audio Data Path
     // Oscillator (480kHz) -> Decimator -> I2S Transmitter (48kHz)
-    decimator.io.sampleIn          := oscillator.io.sample
-    transmitter.io.sampleIn        := decimator.io.sampleOut
-    transmitter.io.valid           := decimator.io.valid
+    oscillator.io.sample           >> decimator.io.sampleIn
+    decimator.io.sampleOut         >> transmitter.io.sampleIn
 
     // --- External Output Mapping ---
     io.i2sBclk  := transmitter.io.bclk
