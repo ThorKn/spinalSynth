@@ -8,17 +8,22 @@
    - IO Bundle
    - Internal Structure
    - Tick Behaviour
-4. Oscillator
+4. Uart and Register Bank
+   - 4.1 UartRx
+   - 4.2 UartProtocolDecoder
+   - 4.3 RegisterBank
+5. Oscillator
    - IO Bundle
    - Internal structure of submodules
-   - 4.1 Oscillator Submodules
+   - 5.1 Oscillator Submodules
      - Accumulator
      - Noise
      - Generators
      - Mux
-   - 4.2 Oscillator signal flow
-5. Decimator
-6. I2STransmitter
+   - 5.2 Oscillator signal flow
+6. Decimator
+7. I2STransmitter
+   - 7.1 Gated Startup and Idle State
 
 ## 1. spinalHDL Hierarchy
 
@@ -35,6 +40,10 @@ Simple_Oscillator_SpinalHDL/
 │   │       └── synth/          # Root package for the project
 │   │           ├── Synth.scala             # Top-level System Integration (per Section 2)
 │   │           ├── TimingGenerator.scala   # Tick generation logic (per Section 3)
+│   │           ├── uart/                   # Control Path logic
+│   │           │   ├── UartRx.scala              # UART Receiver
+│   │           │   ├── UartProtocolDecoder.scala # Protocol Parser
+│   │           │   └── RegisterBank.scala        # Parameter Storage
 │   │           ├── oscillator/             # Core Oscillator logic (per Section 4)
 │   │           │   ├── Oscillator.scala    # Main Oscillator module
 │   │           │   ├── Accumulator.scala   # Phase logic
@@ -67,14 +76,17 @@ The Synth module is the hardware entry point and system integration entity.
 
 The module shall:
 
-- Manage the 24MHz ClockDomain and Async Reset
 - Instantiate UART control (Rx, Decoder, Registers)
 - Instantiate the Synthesis Engine (Timing, Oscillator, Output)
 - connect subsystem interfaces
 - expose the external hardware interface
 - contain no DSP or protocol implementation details
 
-This keeps the top-level RTL clean and structurally simple.
+### Clocking and Reset
+
+The system operates within a single clock domain managed at the top level:
+- **Clock**: 24 MHz external input.
+- **Reset**: Asynchronous, Active-High.
 
 ### IO Bundle
 
@@ -127,7 +139,60 @@ Both tick outputs:
 - one clock cycle wide
 - default to `False`
 
-## 4. Oscillator
+## 4. Uart and Register Bank
+
+This sub-system handles external control, parsing incoming serial data and storing configuration parameters.
+
+### 4.1 UartRx
+
+**Purpose:** Converts the serial UART bitstream into parallel 8-bit bytes. It operates at 115,200 baud using a 208-tick bit period and includes start-bit verification.
+
+### IO Bundle
+
+```scala
+val io = new Bundle {
+    val rx        = in Bool()
+    val data      = out Bits(8 bits)
+    val dataValid = out Bool()
+}
+```
+
+### 4.2 UartProtocolDecoder
+
+**Purpose:** Frames individual bytes into 3-byte command packets: `[Address/Command]`, `[Data]`, and `[Reserved]`. It asserts `writeEnable` only when a full frame is valid.
+
+### IO Bundle
+
+```scala
+val io = new Bundle {
+    val rxData      = in Bits(8 bits)
+    val rxDataValid = in Bool()
+    val writeEnable  = out Bool()
+    val writeAddress = out UInt(8 bits)
+    val writeData    = out Bits(8 bits)
+}
+```
+
+### 4.3 RegisterBank
+
+**Purpose:** Stores the current state of the synthesizer parameters. It implements an atomic update for the 24-bit frequency word, ensuring all three bytes are applied simultaneously to the DDS engine upon writing to the high-byte address.
+
+### IO Bundle
+
+```scala
+val io = new Bundle {
+    val writeEnable  = in Bool()
+    val writeAddress = in UInt(8 bits)
+    val writeData    = in Bits(8 bits)
+
+    val oscFrequency  = out UInt(24 bits)
+    val oscWaveform   = out UInt(8 bits)
+    val oscPulseWidth = out UInt(8 bits)
+    val oscVolume     = out UInt(8 bits)
+}
+```
+
+## 5. Oscillator
 
 The Oscillator is a module that connects the four submodules, as shown in the following internal submodule structure. It serves as an abstraction layer above the generation of the oscillating audio signals.
 
@@ -165,7 +230,7 @@ Oscillator
  └── Mux
 ```
 
-### 4.1 Oscillator Submodules
+### 5.1 Oscillator Submodules
 
 #### Accumulator
 
@@ -241,7 +306,7 @@ val io = new Bundle {
 }
 ```
 
-### 4.2 Oscillator signal flow
+### 5.2 Oscillator signal flow
 
 ```text
 Accumulator ── phase ──┐
@@ -261,7 +326,7 @@ Noise ── noiseSample ───┘
                      sample
 ```
 
-## 5. Decimator
+## 6. Decimator
 
 ### IO Bundle
 
@@ -285,7 +350,7 @@ sampleOut is:
 
 valid communicates that a new 48 kHz sample is available now.
 
-## 6. I2STransmitter
+## 7. I2STransmitter
 
 ### IO Bundle
 
@@ -318,5 +383,25 @@ The serializer uses the scheduled timing subpattern:
 ```
 
 to generate the required average I²S bit timing.
+
+### 7.1 Gated Startup and Idle State
+
+The transmitter employs a gated startup mechanism to ensure that 
+the I2S clock and data lines only toggle when valid audio data is present.
+
+**Idle Behavior:**
+The transmitter starts in an inactive state after reset:
+- `bclk` and `sdata` are held `Low`.
+- `lrclk` is held `High` (the standard idle state for I2S).
+
+**Activation:**
+The state machine transitions to `active` upon the first assertion of `io.valid`. On this cycle:
+- Internal counters (`bitCounter`, `cycleCounter`, `patternIndex`) are reset to `0`.
+- The input sample is latched into the `sampleBuffer`.
+- The `shiftRegister` is loaded, and transmission of the Left channel begins immediately.
+
+Once active, the transmitter remains in the active state to maintain a continuous bit clock, even 
+if subsequent `valid` pulses are delayed, though it will re-synchronize its frame boundaries 
+to the `valid` signal to prevent drift.
 
 ##

@@ -591,27 +591,23 @@ The design shall use fixed-point arithmetic throughout.
 
 ```text
 Synth
+ ├── uart/ (Control Path)
+ │     ├── UartRx
+ │     ├── UartProtocolDecoder
+ │     └── RegisterBank
+ │
  ├── TimingGenerator
- │     ├── phaseTick
- │     └── sampleTick
  │
- ├── synth/ (Core Engine)
- │     └── oscillator/
- │           └── Oscillator
- │                 ├── Accumulator
- │                 ├── Generators 
- │                 ├── Noise
- │                 └── Mux
+ ├── oscillator/ (Core Engine)
+ │     └── Oscillator
+ │           ├── Accumulator
+ │           ├── Generators 
+ │           ├── Noise
+ │           └── Mux
  │
- ├── synth/ (Output Pipeline)
- │     └── output/
- │           ├── Decimator
- │           └── I2STransmitter
- │
- └── I2STransmitter
-       ├── LRCLK Generator
-       ├── Shift Register
-       └── Serial Output
+ └── output/ (Output Pipeline)
+       ├── Decimator
+       └── I2STransmitter
 ```
 
 ---
