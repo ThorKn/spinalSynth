@@ -151,9 +151,8 @@ This sub-system handles external control, parsing incoming serial data and stori
 
 ```scala
 val io = new Bundle {
-    val rx        = in Bool()
-    val data      = out Bits(8 bits)
-    val dataValid = out Bool()
+    val rx      = in Bool()
+    val byteOut = master(Flow(Bits(8 bits)))
 }
 ```
 
@@ -165,11 +164,8 @@ val io = new Bundle {
 
 ```scala
 val io = new Bundle {
-    val rxData      = in Bits(8 bits)
-    val rxDataValid = in Bool()
-    val writeEnable  = out Bool()
-    val writeAddress = out UInt(8 bits)
-    val writeData    = out Bits(8 bits)
+    val rxByte   = slave(Flow(Bits(8 bits)))
+    val regWrite = master(Flow(RegisterWrite()))
 }
 ```
 
@@ -181,14 +177,8 @@ val io = new Bundle {
 
 ```scala
 val io = new Bundle {
-    val writeEnable  = in Bool()
-    val writeAddress = in UInt(8 bits)
-    val writeData    = in Bits(8 bits)
-
-    val oscFrequency  = out UInt(24 bits)
-    val oscWaveform   = out UInt(8 bits)
-    val oscPulseWidth = out UInt(8 bits)
-    val oscVolume     = out UInt(8 bits)
+    val regWrite = slave(Flow(RegisterWrite()))
+    val config   = out(OscillatorConfig())
 }
 ```
 
@@ -213,9 +203,7 @@ Responsibilities:
 ```scala
 val io = new Bundle {
     val phaseTick = in Bool()
-    val freqWord  = in UInt(24 bits)
-    val waveSelect = in UInt(3 bits)
-    val pwmWidth  = in UInt(8 bits)
+    val config    = in(OscillatorConfig())
     val sample    = master(Flow(SInt(16 bits)))
 }
 ```
@@ -275,12 +263,9 @@ Responsible for:
 
 ```scala
 val io = new Bundle {
-    val phase      = in UInt(24 bits)
-    val pwmWidth   = in UInt(8 bits)
-    val sawWave    = out SInt(16 bits)
-    val squareWave = out SInt(16 bits)
-    val pwmWave    = out SInt(16 bits)
-    val triWave    = out SInt(16 bits)
+    val phase    = in UInt(24 bits)
+    val pwmWidth = in UInt(8 bits)
+    val waves    = out(Waveforms())
 }
 ```
 
@@ -295,12 +280,8 @@ Responsible for:
 
 ```scala
 val io = new Bundle {
-
     val waveSelect = in UInt(3 bits)
-    val sawWave    = in SInt(16 bits)
-    val squareWave = in SInt(16 bits)
-    val pwmWave    = in SInt(16 bits)
-    val triWave    = in SInt(16 bits)
+    val waves      = in(Waveforms())
     val noiseWave  = in SInt(16 bits)
     val sample     = out SInt(16 bits)
 }

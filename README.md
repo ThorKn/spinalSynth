@@ -72,7 +72,7 @@ External Interface (24MHz Clk, Reset, UART Rx)
 │  UART Control Path (synth.uart)               │
 │  [UartRx] → [ProtocolDecoder] → [RegisterBank]│
 └───────────────┬───────────────────────────────┘
-                │ (Internal Control Bus)
+                │ config: OscillatorConfig
                 ↓
 ┌───────────────────────────────────────────────┐
 │  Synthesis Engine                             │
@@ -584,6 +584,14 @@ The exact serializer state machine behavior is not yet specified.
 | audioSample | SInt(16 bits) |
 
 The design shall use fixed-point arithmetic throughout.
+
+### Grouped Bundles & Flow Interfaces
+
+| Bundle | Subfields | Type |
+|---|---|---|
+| **RegisterWrite** | `address` <br> `data` | UInt(8 bits) <br> Bits(8 bits) |
+| **OscillatorConfig** | `freqWord` <br> `waveSelect` <br> `pwmWidth` <br> `volume` | UInt(24 bits) <br> UInt(3 bits) <br> UInt(8 bits) <br> UInt(8 bits) |
+| **Waveforms** | `saw` <br> `square` <br> `pwm` <br> `tri` | SInt(16 bits) <br> SInt(16 bits) <br> SInt(16 bits) <br> SInt(16 bits) |
 
 ---
 
