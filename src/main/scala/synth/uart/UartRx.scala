@@ -2,6 +2,7 @@ package synth.uart
 
 import spinal.core._
 import spinal.lib._
+import spinal.lib.com.uart._
 
 class UartRx extends Component {
 
@@ -10,145 +11,37 @@ class UartRx extends Component {
     val byteOut = master(Flow(Bits(8 bits)))
   }
 
-  // --------------------------------------------------------------------------
-  // UART Timing Constants
-  // --------------------------------------------------------------------------
+  // 1. Hardware Construction Parameters (Generics)
+  val uartCtrlConfig = UartCtrlGenerics(
+    dataWidthMax      = 8,
+    clockDividerWidth = 20,
+    preSamplingSize   = 1,
+    samplingSize      = 5,
+    postSamplingSize  = 2
+  )
 
-  val CLOCK_FREQ     = 24000000
-  val BAUD_RATE      = 115200
-  val BIT_TICKS      = 208
-  val HALF_BIT_TICKS = 104
+  // 2. Instantiate standard UartCtrl
+  val uartCtrl = new UartCtrl(uartCtrlConfig)
 
-  // --------------------------------------------------------------------------
-  // FSM State Definition
-  // --------------------------------------------------------------------------
+  // 3. Connect raw physical RX pin (tied to rxd)
+  uartCtrl.io.uart.rxd := io.rx
 
-  object State extends SpinalEnum {
-    val IDLE, START, DATA, STOP, DONE = newElement()
-  }
+  // 4. Static Protocol Configuration (8N1 Frame)
+  val frameConfig = UartCtrlFrameConfig(uartCtrlConfig)
+  frameConfig.dataLength := 7 // value + 1 = 8 bits
+  frameConfig.parity     := UartParityType.NONE
+  frameConfig.stop       := UartStopType.ONE
 
-  val state = Reg(State()) init(State.IDLE)
+  uartCtrl.io.config.frame := frameConfig
 
-  // --------------------------------------------------------------------------
-  // Internal Registers
-  // --------------------------------------------------------------------------
+  // 5. Static Baud Rate Configuration (115200 Baud @ 24MHz clock)
+  // Formula: System Clock / (Baud Rate * (preSampling + sampling + postSampling))
+  // With generics above, total samplings per bit = 1 + 5 + 2 = 8
+  // Divider = 24,000,000 / (115,200 * 8) = 26
+  uartCtrl.io.config.clockDivider := 26
 
-  val baudCounter  = Reg(UInt(8 bits)) init(0)
-  val bitCounter   = Reg(UInt(3 bits)) init(0)
-
-  val shiftReg     = Reg(Bits(8 bits)) init(0)
-
-  val dataReg      = Reg(Bits(8 bits)) init(0)
-  val dataValidReg = Reg(Bool()) init(False)
-
-  // --------------------------------------------------------------------------
-  // Default Outputs
-  // --------------------------------------------------------------------------
-
-  io.byteOut.payload := dataReg
-  io.byteOut.valid   := dataValidReg
-
-  // dataValid is a one-clock pulse
-  dataValidReg := False
-
-  // --------------------------------------------------------------------------
-  // FSM
-  // --------------------------------------------------------------------------
-
-  switch(state) {
-
-    // ------------------------------------------------------------------------
-    // IDLE
-    // ------------------------------------------------------------------------
-
-    is(State.IDLE) {
-
-      baudCounter := 0
-      bitCounter  := 0
-
-      when(io.rx === False) {
-        state := State.START
-      }
-    }
-
-    // ------------------------------------------------------------------------
-    // START BIT ALIGNMENT
-    // ------------------------------------------------------------------------
-
-    is(State.START) {
-
-      when(baudCounter === HALF_BIT_TICKS - 1) {
-
-        baudCounter := 0
-
-        // Verify start bit still valid
-        when(io.rx === False) {
-          state := State.DATA
-        } otherwise {
-          state := State.IDLE
-        }
-
-      } otherwise {
-        baudCounter := baudCounter + 1
-      }
-    }
-
-    // ------------------------------------------------------------------------
-    // DATA BITS
-    // ------------------------------------------------------------------------
-
-    is(State.DATA) {
-
-      when(baudCounter === BIT_TICKS - 1) {
-
-        baudCounter := 0
-
-        // UART is LSB first
-        shiftReg(bitCounter) := io.rx
-
-        when(bitCounter === 7) {
-          bitCounter := 0
-          state := State.STOP
-        } otherwise {
-          bitCounter := bitCounter + 1
-        }
-
-      } otherwise {
-        baudCounter := baudCounter + 1
-      }
-    }
-
-    // ------------------------------------------------------------------------
-    // STOP BIT
-    // ------------------------------------------------------------------------
-
-    is(State.STOP) {
-
-      when(baudCounter === BIT_TICKS - 1) {
-
-        baudCounter := 0
-
-        // Stop bit must be high
-        when(io.rx === True) {
-          dataReg := shiftReg
-          state := State.DONE
-        } otherwise {
-          state := State.IDLE
-        }
-
-      } otherwise {
-        baudCounter := baudCounter + 1
-      }
-    }
-
-    // ------------------------------------------------------------------------
-    // DONE
-    // ------------------------------------------------------------------------
-
-    is(State.DONE) {
-
-      dataValidReg := True
-      state := State.IDLE
-    }
-  }
+  // 6. Connect Flow Output
+  io.byteOut.payload     := uartCtrl.io.read.payload
+  io.byteOut.valid       := uartCtrl.io.read.valid
+  uartCtrl.io.read.ready := True
 }
