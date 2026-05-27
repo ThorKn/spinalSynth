@@ -47,7 +47,7 @@ Simple_Oscillator_SpinalHDL/
 │   └── test/
 │       └── scala/
 │           └── synth/          # SpinalSim testbenches
-│               ├── OscillatorTopSim.scala  # Full system simulation
+│               ├── SynthSim.scala          # Full system simulation
 │               ├── TimingSim.scala         # Verifying tick precision
 │               ├── oscillator/
 │               │   └── WaveformSim.scala   # Verifying Generator math
