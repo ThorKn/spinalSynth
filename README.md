@@ -1,4 +1,4 @@
-# Simple Oscillator spinalHDL
+# spinalSynth
 
 ---
 
@@ -28,7 +28,7 @@ There is an additional document about the implementation details of this project
 
 # 1. Introduction
 
-This project implements a compact digital audio oscillator in SpinalHDL.
+This project implements a compact digital audio synthsizer in SpinalHDL.
 
 The oscillator is based on Direct Digital Synthesis (DDS) using a phase accumulator architecture. The oscillator generates audio waveforms internally using an oversampled DDS engine and outputs stereo audio using the I²S protocol.
 
