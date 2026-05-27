@@ -8,7 +8,7 @@ class WaveformSim extends AnyFunSuite {
     SimConfig.compile(new Generators).doSim { dut =>
       
       // Helper to check waveforms at a specific phase
-      def check(phase: Long, expectedSaw: Int, expectedTri: Int, label: String) {
+      def check(phase: Long, expectedSaw: Int, expectedTri: Int, label: String): Unit = {
         dut.io.phase #= phase
         sleep(1) // Combinational settling
         

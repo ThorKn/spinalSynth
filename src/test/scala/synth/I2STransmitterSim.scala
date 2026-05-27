@@ -9,20 +9,20 @@ class I2STransmitterSim extends AnyFunSuite {
       dut.clockDomain.forkStimulus(period = 10)
       
       // Initial state
-      dut.io.valid #= false
-      dut.io.sampleIn #= 12345 // Apply a dummy test sample
+      dut.io.sampleIn.valid #= false
+      dut.io.sampleIn.payload #= 12345 // Apply a dummy test sample
       dut.clockDomain.waitSampling(5)
 
       // Trigger the "Gated Startup": Pulse valid to activate the transmitter
-      dut.io.valid #= true
+      dut.io.sampleIn.valid #= true
       dut.clockDomain.waitSampling()
-      dut.io.valid #= false
+      dut.io.sampleIn.valid #= false
 
       // The transmitter is now active. Wait for the start of the frame.
       dut.clockDomain.waitSamplingWhere(dut.io.lrclk.toBoolean == false)
 
       // Helper to verify a full BCLK period (falling edge to falling edge)
-      def checkBitInterval(expectedCycles: Int) {
+      def checkBitInterval(expectedCycles: Int): Unit = {
         val start = simTime()
         // The interval ends when BCLK completes one high-low cycle
         dut.clockDomain.waitSamplingWhere(dut.io.bclk.toBoolean == true)

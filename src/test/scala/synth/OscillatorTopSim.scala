@@ -5,6 +5,10 @@ import spinal.core.sim._
 import org.scalatest.funsuite.AnyFunSuite
 
 class OscillatorTopSim extends AnyFunSuite {
+  // This test class is obsolete and has been commented out because it refers to the non-existent
+  // 'OscillatorTop' module, which was renamed/refactored into 'Synth'.
+  // Please refer to 'SynthSim.scala' for the end-to-end I2S simulation of the actual top-level module.
+  /*
   test("OscillatorTop end-to-end I2S verification") {
     // Using a simulation frequency of 24MHz (period = 41.67ns)
     // We'll use 10 units as the half-period for simplicity in the sim
@@ -83,4 +87,5 @@ class OscillatorTopSim extends AnyFunSuite {
       println("End-to-end I2S simulation successful.")
     }
   }
+  */
 }

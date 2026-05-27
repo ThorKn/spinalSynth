@@ -35,8 +35,6 @@ class SynthSim extends AnyFunSuite {
         // Align with the start of a Left-channel frame (LRCLK goes Low)
         waitUntil(dut.io.i2sLrclk.toBoolean == true)
         waitUntil(dut.io.i2sLrclk.toBoolean == false)
-        waitUntil(dut.io.i2s_lrclk.toBoolean == true)
-        waitUntil(dut.io.i2s_lrclk.toBoolean == false)
 
         var lastFrameTime = simTime()
 
