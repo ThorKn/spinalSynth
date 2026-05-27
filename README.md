@@ -172,7 +172,7 @@ Right now there is only one command.
 |---|---|---|---|
 | `0x00` | `FREQ_LOW` | Frequency Word Bits [7:0] | 8 bit |
 | `0x01` | `FREQ_MID` | Frequency Word Bits [15:8] | 8 bit |
-| `0x02` | `FREQ_HIGH` | Frequency Word Bits [23:16] (Triggers Atomic Update) | 8 bit |
+| `0x02` | `FREQ_HIGH` | Frequency Word Bits [23:16] | 8 bit |
 | `0x03` | `WAVE_SEL` | 0:Saw, 1:Square, 2:PWM, 3:Triangle, 4:Noise | 3 bit |
 | `0x04` | `PWM_WIDTH` | Duty cycle for PWM waveform | 8 bit |
 | `0x05` | `VOLUME` | Master output volume (Reserved) | 8 bit |
