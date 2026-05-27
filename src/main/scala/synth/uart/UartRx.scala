@@ -6,9 +6,8 @@ import spinal.lib._
 class UartRx extends Component {
 
   val io = new Bundle {
-    val rx        = in Bool()
-    val data      = out Bits(8 bits)
-    val dataValid = out Bool()
+    val rx      = in Bool()
+    val byteOut = master(Flow(Bits(8 bits)))
   }
 
   // --------------------------------------------------------------------------
@@ -46,8 +45,8 @@ class UartRx extends Component {
   // Default Outputs
   // --------------------------------------------------------------------------
 
-  io.data      := dataReg
-  io.dataValid := dataValidReg
+  io.byteOut.payload := dataReg
+  io.byteOut.valid   := dataValidReg
 
   // dataValid is a one-clock pulse
   dataValidReg := False

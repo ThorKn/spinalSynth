@@ -12,8 +12,8 @@ class WaveformSim extends AnyFunSuite {
         dut.io.phase #= phase
         sleep(1) // Combinational settling
         
-        val saw = dut.io.sawWave.toInt
-        val tri = dut.io.triWave.toInt
+        val saw = dut.io.waves.saw.toInt
+        val tri = dut.io.waves.tri.toInt
         
         println(f"[$label%-15s] Phase: 0x$phase%06X | Saw: $saw%6d | Tri: $tri%6d")
         assert(saw == expectedSaw, s"$label Saw mismatch")

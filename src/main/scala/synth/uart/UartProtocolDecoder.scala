@@ -2,17 +2,13 @@ package synth.uart
 
 import spinal.core._
 import spinal.lib._
+import synth.RegisterWrite
 
 class UartProtocolDecoder extends Component {
 
   val io = new Bundle {
-
-    val rxData      = in Bits(8 bits)
-    val rxDataValid = in Bool()
-
-    val writeEnable  = out Bool()
-    val writeAddress = out UInt(8 bits)
-    val writeData    = out Bits(8 bits)
+    val rxByte   = slave(Flow(Bits(8 bits)))
+    val regWrite = master(Flow(RegisterWrite()))
   }
 
   // --------------------------------------------------------------------------
@@ -39,9 +35,9 @@ class UartProtocolDecoder extends Component {
   // Default Outputs
   // --------------------------------------------------------------------------
 
-  io.writeEnable  := writeEnableReg
-  io.writeAddress := writeAddressReg
-  io.writeData    := writeDataReg
+  io.regWrite.payload.address := writeAddressReg
+  io.regWrite.payload.data    := writeDataReg
+  io.regWrite.valid           := writeEnableReg
 
   // writeEnable is a one-clock pulse
   writeEnableReg := False
@@ -58,10 +54,10 @@ class UartProtocolDecoder extends Component {
 
     is(State.WAIT_CMD) {
 
-      when(io.rxDataValid) {
+      when(io.rxByte.valid) {
 
         // Only command 0x01 is supported
-        when(io.rxData === B"8'x01") {
+        when(io.rxByte.payload === B"8'x01") {
           state := State.WAIT_ADDR
         }
       }
@@ -73,9 +69,9 @@ class UartProtocolDecoder extends Component {
 
     is(State.WAIT_ADDR) {
 
-      when(io.rxDataValid) {
+      when(io.rxByte.valid) {
 
-        addressReg := io.rxData.asUInt
+        addressReg := io.rxByte.payload.asUInt
 
         state := State.WAIT_DATA
       }
@@ -87,10 +83,10 @@ class UartProtocolDecoder extends Component {
 
     is(State.WAIT_DATA) {
 
-      when(io.rxDataValid) {
+      when(io.rxByte.valid) {
 
         writeAddressReg := addressReg
-        writeDataReg    := io.rxData
+        writeDataReg    := io.rxByte.payload
 
         writeEnableReg := True
 

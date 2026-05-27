@@ -2,19 +2,13 @@ package synth.uart
 
 import spinal.core._
 import spinal.lib._
+import synth.{RegisterWrite, OscillatorConfig}
 
 class RegisterBank extends Component {
 
   val io = new Bundle {
-
-    val writeEnable  = in Bool()
-    val writeAddress = in UInt(8 bits)
-    val writeData    = in Bits(8 bits)
-
-    val oscFrequency  = out UInt(24 bits)
-    val oscWaveform   = out UInt(8 bits)
-    val oscPulseWidth = out UInt(8 bits)
-    val oscVolume     = out UInt(8 bits)
+    val regWrite = slave(Flow(RegisterWrite()))
+    val config   = out(OscillatorConfig())
   }
 
   // --------------------------------------------------------------------------
@@ -32,38 +26,38 @@ class RegisterBank extends Component {
   // Register Write Logic
   // --------------------------------------------------------------------------
 
-  when(io.writeEnable) {
+  when(io.regWrite.valid) {
 
-    switch(io.writeAddress) {
+    switch(io.regWrite.payload.address) {
 
       // Frequency Low
       is(U"8'x00") {
-        freqLowReg := io.writeData
+        freqLowReg := io.regWrite.payload.data
       }
 
       // Frequency Mid
       is(U"8'x01") {
-        freqMidReg := io.writeData
+        freqMidReg := io.regWrite.payload.data
       }
 
       // Frequency High
       is(U"8'x02") {
-        freqHighReg := io.writeData
+        freqHighReg := io.regWrite.payload.data
       }
 
       // Waveform
       is(U"8'x03") {
-        waveformReg := io.writeData
+        waveformReg := io.regWrite.payload.data
       }
 
       // Pulse Width
       is(U"8'x04") {
-        pulseWidthReg := io.writeData
+        pulseWidthReg := io.regWrite.payload.data
       }
 
       // Volume
       is(U"8'x05") {
-        volumeReg := io.writeData
+        volumeReg := io.regWrite.payload.data
       }
     }
   }
@@ -95,8 +89,8 @@ class RegisterBank extends Component {
   // Outputs
   // --------------------------------------------------------------------------
 
-  io.oscFrequency  := oscFrequencyReg
-  io.oscWaveform   := oscWaveformReg
-  io.oscPulseWidth := oscPulseWidthReg
-  io.oscVolume     := oscVolumeReg
+  io.config.freqWord   := oscFrequencyReg
+  io.config.waveSelect := oscWaveformReg(2 downto 0)
+  io.config.pwmWidth   := oscPulseWidthReg
+  io.config.volume     := oscVolumeReg
 }

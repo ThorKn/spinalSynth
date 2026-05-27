@@ -47,11 +47,8 @@ class Synth extends Component {
 
     // --- UART Control Path ---
     uartRxModule.io.rx             := io.uartRx
-    protocolDecoder.io.rxData      := uartRxModule.io.data
-    protocolDecoder.io.rxDataValid := uartRxModule.io.dataValid
-    registerBank.io.writeEnable    := protocolDecoder.io.writeEnable
-    registerBank.io.writeAddress   := protocolDecoder.io.writeAddress
-    registerBank.io.writeData      := protocolDecoder.io.writeData
+    protocolDecoder.io.rxByte      << uartRxModule.io.byteOut
+    registerBank.io.regWrite       << protocolDecoder.io.regWrite
 
     // --- Synthesis Engine Wiring ---
 
@@ -60,9 +57,7 @@ class Synth extends Component {
     decimator.io.sampleTick        := timingGen.io.sampleTick
 
     // 2. Control Signals (Register Bank -> Oscillator)
-    oscillator.io.freqWord         := registerBank.io.oscFrequency
-    oscillator.io.waveSelect       := registerBank.io.oscWaveform(2 downto 0)
-    oscillator.io.pwmWidth         := registerBank.io.oscPulseWidth
+    oscillator.io.config           := registerBank.io.config
 
     // 3. Audio Data Path
     // Oscillator (480kHz) -> Decimator -> I2S Transmitter (48kHz)
