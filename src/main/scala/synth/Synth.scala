@@ -35,10 +35,8 @@ class Synth extends Component {
   // System Integration Area
   val core = new ClockingArea(coreClockDomain) {
 
-    // UART and RegisterBank Modules
-    val uartRxModule      = new UartRx()
-    val protocolDecoder   = new UartProtocolDecoder()
-    val registerBank      = new RegisterBank()
+    // UART Subsystem Wrapper
+    val uart              = new Uart()
     
     // Synthesis and Output Modules
     val timingGen         = new TimingGenerator()
@@ -48,9 +46,7 @@ class Synth extends Component {
     val transmitter       = new I2STransmitter()
 
     // --- UART Control Path ---
-    uartRxModule.io.rx             := io.uartRx
-    protocolDecoder.io.rxByte      << uartRxModule.io.byteOut
-    registerBank.io.regWrite       << protocolDecoder.io.regWrite
+    uart.io.rx := io.uartRx
 
     // --- Synthesis Engine Wiring ---
 
@@ -59,9 +55,9 @@ class Synth extends Component {
     val alignedSampleTick          = Delay(timingGen.io.sampleTick, cycleCount = 1)
     decimator.io.sampleTick        := alignedSampleTick
 
-    // 2. Control Signals (Register Bank -> Oscillator)
-    oscillator.io.config           := registerBank.io.config
-    attenuator.io.volume           := registerBank.io.config.volume
+    // 2. Control Signals (UART Subsystem -> Synth Engine)
+    oscillator.io.config           := uart.io.config
+    attenuator.io.volume           := uart.io.config.volume
 
     // 3. Audio Data Path
     // Oscillator (480kHz) -> Attenuator -> Decimator -> I2S Transmitter (48kHz)

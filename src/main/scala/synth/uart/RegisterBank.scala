@@ -15,12 +15,17 @@ class RegisterBank extends Component {
   // Raw Register Storage
   // --------------------------------------------------------------------------
 
-  val freqLowReg    = Reg(Bits(8 bits)) init(0)
-  val freqMidReg    = Reg(Bits(8 bits)) init(0)
-  val freqHighReg   = Reg(Bits(8 bits)) init(0)
-  val waveformReg   = Reg(Bits(8 bits)) init(0)
-  val pulseWidthReg = Reg(Bits(8 bits)) init(0)
-  val volumeReg     = Reg(Bits(8 bits)) init(0)
+  val freqLowReg      = Reg(Bits(8 bits)) init(0)
+  val freqMidReg      = Reg(Bits(8 bits)) init(0)
+  val freqHighReg     = Reg(Bits(8 bits)) init(0)
+  
+  // Staging registers for atomic commitment
+  val freqLowShadow   = Reg(Bits(8 bits)) init(0)
+  val freqMidShadow   = Reg(Bits(8 bits)) init(0)
+
+  val waveformReg     = Reg(Bits(8 bits)) init(0)
+  val pulseWidthReg   = Reg(Bits(8 bits)) init(0)
+  val volumeReg       = Reg(Bits(8 bits)) init(0)
 
   // --------------------------------------------------------------------------
   // Register Write Logic
@@ -30,19 +35,21 @@ class RegisterBank extends Component {
 
     switch(io.regWrite.payload.address) {
 
-      // Frequency Low
+      // Frequency Low (Stage in shadow register)
       is(U"8'x00") {
-        freqLowReg := io.regWrite.payload.data
+        freqLowShadow := io.regWrite.payload.data
       }
 
-      // Frequency Mid
+      // Frequency Mid (Stage in shadow register)
       is(U"8'x01") {
-        freqMidReg := io.regWrite.payload.data
+        freqMidShadow := io.regWrite.payload.data
       }
 
-      // Frequency High
+      // Frequency High (Trigger simultaneous atomic commit of High, Mid, and Low)
       is(U"8'x02") {
         freqHighReg := io.regWrite.payload.data
+        freqMidReg  := freqMidShadow
+        freqLowReg  := freqLowShadow
       }
 
       // Waveform

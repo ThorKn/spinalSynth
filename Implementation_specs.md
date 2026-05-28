@@ -41,6 +41,7 @@ spinalSynth/
 │   │           ├── Synth.scala             # Top-level System Integration (per Section 2)
 │   │           ├── TimingGenerator.scala   # Tick generation logic (per Section 3)
 │   │           ├── uart/                   # Control Path logic
+│   │           │   ├── Uart.scala                # UART Subsystem Wrapper
 │   │           │   ├── UartRx.scala              # UART Receiver
 │   │           │   ├── UartProtocolDecoder.scala # Protocol Parser
 │   │           │   └── RegisterBank.scala        # Parameter Storage
@@ -76,7 +77,7 @@ The Synth module is the hardware entry point and system integration entity.
 
 The module shall:
 
-- Instantiate UART control (Rx, Decoder, Registers)
+- Instantiate unified UART Subsystem Wrapper (`Uart`)
 - Instantiate the Synthesis Engine (Timing, Oscillator, Output)
 - connect subsystem interfaces
 - expose the external hardware interface
@@ -139,9 +140,27 @@ Both tick outputs:
 - one clock cycle wide
 - default to `False`
 
-## 4. Uart and Register Bank
+## 4. Uart Subsystem
 
-This sub-system handles external control, parsing incoming serial data and storing configuration parameters.
+This subsystem encapsulates serial data decoding, command protocol framing, and parameter register storage into a single cohesive module.
+
+### Submodule Structure
+
+```text
+Uart
+ ├── UartRx
+ ├── UartProtocolDecoder
+ └── RegisterBank
+```
+
+### IO Bundle
+
+```scala
+val io = new Bundle {
+    val rx     = in Bool()
+    val config = out(OscillatorConfig())
+}
+```
 
 ### 4.1 UartRx
 
@@ -172,6 +191,12 @@ val io = new Bundle {
 ### 4.3 RegisterBank
 
 **Purpose:** Stores the current state of the synthesizer parameters. It implements an atomic update for the 24-bit frequency word, ensuring all three bytes are applied simultaneously to the DDS engine upon writing to the high-byte address.
+
+#### Atomic Write Staging Mechanism
+To prevent audibly jarring sweep glitches or frequency artifacts, the multi-byte frequency configuration transitions atomically:
+- **`FREQ_LOW` (`0x00`)**: Staged into a temporary staging register `freqLowShadow`.
+- **`FREQ_MID` (`0x01`)**: Staged into a temporary staging register `freqMidShadow`.
+- **`FREQ_HIGH` (`0x02`)**: Directly commits the newly written high byte (`freqHighReg`) and transfers both staged shadow registers (`freqMidReg := freqMidShadow`, `freqLowReg := freqLowShadow`) to the active registers simultaneously on a single clock edge.
 
 ### IO Bundle
 

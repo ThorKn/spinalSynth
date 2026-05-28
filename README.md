@@ -69,8 +69,9 @@ External Interface (24MHz Clk, Reset, UART Rx)
         Synth (Unified Top Module)
           ↓
 ┌───────────────────────────────────────────────┐
-│  UART Control Path (synth.uart)               │
-│  [UartRx] → [ProtocolDecoder] → [RegisterBank]│
+│  UART Subsystem (synth.uart)                  │
+│  [Uart]                                       │
+│    └─ [UartRx] → [Decoder] → [RegisterBank]   │
 └───────────────┬───────────────────────────────┘
                 │ config: OscillatorConfig
                 ↓
@@ -218,6 +219,15 @@ val phase = Reg(UInt(24 bits))
 | Type | Unsigned |
 
 The frequency word controls oscillator frequency.
+
+> [!IMPORTANT]
+> **Atomic Multi-Byte Update Protocol:**
+> Since the 24-bit frequency word is spread across three 8-bit registers (`FREQ_LOW`, `FREQ_MID`, and `FREQ_HIGH`), updates are buffered atomically to prevent audio glitching:
+> 1. Writing to `FREQ_LOW` (`0x00`) stages the lower 8 bits in a temporary shadow register.
+> 2. Writing to `FREQ_MID` (`0x01`) stages the middle 8 bits in a temporary shadow register.
+> 3. Writing to `FREQ_HIGH` (`0x02`) commits the entire 24-bit frequency word (`High ## MidShadow ## LowShadow`) simultaneously to the active synthesis registers in a single clock cycle.
+>
+> *Always write registers in order (`FREQ_LOW` → `FREQ_MID` → `FREQ_HIGH`) to ensure consistent updates.*
 
 ---
 
@@ -599,10 +609,11 @@ The design shall use fixed-point arithmetic throughout.
 
 ```text
 Synth
- ├── uart/ (Control Path)
- │     ├── UartRx
- │     ├── UartProtocolDecoder
- │     └── RegisterBank
+ ├── uart/ (Control Subsystem)
+ │     └── Uart (Subsystem Wrapper)
+ │           ├── UartRx
+ │           ├── UartProtocolDecoder
+ │           └── RegisterBank
  │
  ├── TimingGenerator
  │
@@ -612,6 +623,9 @@ Synth
  │           ├── Generators 
  │           ├── Noise
  │           └── Mux
+ │
+ ├── mixing/ (Audio Processing)
+ │     └── Attenuator (Volume Control)
  │
  └── output/ (Output Pipeline)
        ├── Decimator
