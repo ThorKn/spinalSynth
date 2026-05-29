@@ -130,3 +130,149 @@ Verifies the FSM protocol parser (`UartProtocolDecoder`) for reset safety, succe
   - Push Byte 2 (`0x05` - `VOLUME`), then wait 50 clock cycles.
   - Push Byte 3 (`0x7F`), then wait 1 clock cycle.
 * **Assertion**: Verify that the FSM maintains state synchronization, and atomically asserts `regWrite.valid = True` with `address = 0x05` and `data = 0x7F` exactly when Byte 3 is pushed.
+
+---
+
+### 1.4 Timing Generator Unit Test (`TimingSim`)
+
+#### Purpose
+Verifies the master clock divider module (`TimingGenerator`) for reset safety, cycle-accurate tick intervals ($480\text{ kHz}$ phase ticks and $48\text{ kHz}$ sample ticks), and strict synchronous alignment between clock domains.
+
+#### Simulated Environment
+* **Component Under Test**: `TimingGenerator`
+* **Clock Domain**: 24 MHz master clock (simulation period = 10 units).
+* **Reset**: Asynchronous, Active-High.
+
+#### Input Stimulus & Signals
+* `io.phaseTick`: `Bool` (output divider pulse every 50 master clock cycles)
+* `io.sampleTick`: `Bool` (output divider pulse every 500 master clock cycles)
+
+#### Test Cases
+
+##### 1.4.1 Reset Stability
+* **Action**: Assert active-high reset for 20 clock cycles.
+* **Assertion**: Verify that both `phaseTick` and `sampleTick` remain strictly `False`.
+
+##### 1.4.2 Interval Precision & Long-Term Stability
+* **Action**: Run the simulation and measure consecutive tick intervals after deasserting reset:
+  - Track 10 consecutive `phaseTick` events.
+  - Track 5 consecutive `sampleTick` events.
+* **Assertion**: Assert that every `phaseTick` interval is exactly 50 clock cycles and every `sampleTick` interval is exactly 500 clock cycles, ensuring zero clock drift.
+
+##### 1.4.3 Synchronous Domain Alignment
+* **Action**: Monitor outputs over 5 full sample cycles ($2500$ clock cycles).
+* **Assertion**: Verify that *every single time* `sampleTick` is asserted (`True`), `phaseTick` is also synchronously asserted (`True`).
+
+---
+
+### 1.5 Waveform Generator Unit Test (`WaveformSim`)
+
+#### Purpose
+Verifies the digital oscillators core module (`Generators`) for mathematical wave formatting precision (Sawtooth, Square, Triangle) and pulse-width comparator thresholds (PWM) across boundary phases.
+
+#### Simulated Environment
+* **Component Under Test**: `Generators`
+* **Clock Domain**: None (Combinational Verification).
+
+#### Input Stimulus & Signals
+* `io.phase`: `UInt` (24 bits)
+* `io.pwmWidth`: `UInt` (8 bits)
+* `io.waves`: `Waveforms` (output bundle containing `saw`, `square`, `pwm`, `tri`)
+
+#### Test Cases
+
+##### 1.5.1 Peak & Zero-Crossing Waveform Math
+* **Action**: Drive specific static phase angles and assert output bounds:
+  - **Phase `0x000000` (Start)**: Assert `saw = -32768`, `square = -32768`, `tri = -32768`.
+  - **Phase `0x400000` (1/4 Cycle)**: Assert `saw = -16384`, `square = -32768`, `tri = 0`.
+  - **Phase `0x7FFFFF` (Pre-Half Transition)**: Assert `saw = -1`, `square = -32768`, `tri = 32767`.
+  - **Phase `0x800000` (Half Cycle / Toggle)**: Assert `saw = 0`, `square = 32767`, `tri = 32767`.
+  - **Phase `0xC00000` (3/4 Cycle)**: Assert `saw = 16384`, `square = 32767`, `tri = -1`.
+  - **Phase `0xFFFFFF` (Wrap Boundary)**: Assert `saw = 32767`, `square = 32767`, `tri = -32768`.
+
+##### 1.5.2 PWM Comparator Threshold Logic
+* **Action**: Set pulse duty configurations and verify switching thresholds:
+  - Set `pwmWidth = 0x80` (50%): Verify `pwm = 32767` at phase `0x7FFFFF` and `pwm = -32768` at phase `0x800000`.
+  - Set `pwmWidth = 0x40` (25%): Verify `pwm = 32767` at phase `0x3FFFFF` and `pwm = -32768` at phase `0x400000`.
+
+---
+
+### 1.6 I2S Transmitter Unit Test (`I2STransmitterSim`)
+
+#### Purpose
+Verifies the I²S serial audio transmitter module (`I2STransmitter`) for startup safety, idle low power states, cycle-accurate timing patterns (according to the modulation table), and correct parallel-to-serial data conversion.
+
+#### Simulated Environment
+* **Component Under Test**: `I2STransmitter`
+* **Clock Domain**: 24 MHz master clock (simulation period = 10 units).
+* **Reset**: Asynchronous, Active-High.
+
+#### Input Stimulus & Signals
+* `io.sampleIn`: `Flow[SInt]` (16 bits, incoming parallel samples)
+* `io.bclk`: `Bool` (output continuous bit clock)
+* `io.lrclk`: `Bool` (output left/right word select channel line)
+* `io.sdata`: `Bool` (output serialized data line)
+
+#### Test Cases
+
+##### 1.6.1 Reset Stability & Idle Power State
+* **Action**: Assert reset for 20 clock cycles, deassert, and run for 20 more cycles without pulsing `sampleIn.valid`.
+* **Assertion**: Verify that throughout this duration:
+  - `bclk` is held strictly `False`.
+  - `lrclk` is held strictly `True` (standard passive high line state).
+  - `sdata` is held strictly `False`.
+
+##### 1.6.2 Serial Word Bitstream Precision
+* **Action**: Pulse `sampleIn.valid = True` for 1 cycle loading sample `0xA5A5` (binary `1010010110100101`).
+* **Assertion**: Align with the start of the serialization frame (`lrclk` goes `False` for Left channel), and sample `sdata` at each bit's middle interval (when `bclk` is `True`):
+  - Verify that the stream of 16 sequential bits matches the MSB-first bits of `0xA5A5` perfectly.
+
+##### 1.6.3 Timing Pattern & Frame Duration
+* **Action**: Wait for `lrclk` to toggle, then measure the individual bit clock intervals and the full Left-to-Right frame duration.
+* **Assertion**: Verify that:
+  - The first 8 bit intervals match the cycle-accurate modulation pattern: 16, 16, 15, 16, 16, 15, 16, 15 clock cycles.
+  - The full Left/Right stereo frame completes in exactly 500 clock cycles ($48\text{ kHz}$ sampling rate).
+
+---
+
+## 2. Integration Tests
+
+This chapter contains the specifications for verifying multi-module and full-system interactive integration behavior.
+
+### 2.1 Complete System Integration Test (`SynthSim`)
+
+#### Purpose
+Verifies the end-to-end synthesizer system (`Synth`) for seamless hardware module cooperation, including UART reception, register bank parsing, dynamic digital sound wave synthesis (PWM), volume scaling, and stereo I²S serial streaming in real-time.
+
+#### Simulated Environment
+* **Component Under Test**: `Synth`
+* **Clock Domain**: 24 MHz master clock (simulation period = 10 units).
+* **Reset**: Asynchronous, Active-High.
+
+#### Input Stimulus & Signals
+* `io.uartRx`: `Bool` (input UART serial receive line)
+* `io.i2sBclk`: `Bool` (output I2S bit clock)
+* `io.i2sLrclk`: `Bool` (output I2S left/right channel select)
+* `io.i2sData`: `Bool` (output I2S serial audio data stream)
+
+#### Test Cases
+
+##### 2.1.1 Power-On Silence Idle
+* **Action**: Deassert reset and run simulation for 1000 clock cycles with `uartRx` held idle (`True`).
+* **Assertion**: Verify that the generated left/right stereo I2S samples are strictly silent (`0`), confirming the attenuator starts safely muted.
+
+##### 2.1.2 Real-time UART Parameter Modulation
+* **Action**: Stream a live byte sequence over the `uartRx` line at 115200 Baud (208 master cycles per bit) to dynamically configure the synthesizer:
+  1. Write `0x02` (PWM mode) to Waveform Select (`0x03`).
+  2. Write `0x80` (50% Duty cycle) to PWM Width (`0x04`).
+  3. Write `0xFF` (Max Volume) to Volume (`0x05`).
+  4. Write atomic DDS Frequency tuning word `0x080000` (Low = `0x00`, Mid = `0x00`, High = `0x08` commit to target $15\text{ kHz}$).
+* **Assertion**: Capture 25 I2S frames and verify:
+  - **Stereo Alignment**: Left and Right samples are perfectly identical for all frames.
+  - **Dynamic Audio Response**: Outputs are no longer silent (non-zero PWM waves are generated).
+  - **DSP Correctness**: Non-zero sample values transition perfectly between peak positive (`32639`) and peak negative (`-32640`) values, demonstrating a true 50% duty-cycle PWM square wave swinging at $15\text{ kHz}$.
+
+
+
+
+
