@@ -2,6 +2,13 @@
 
 ---
 
+Additional documents for spinalSynth:
+
+* [Implementation_specs.md](Implementation_specs.md)  
+* [Testing_specs.md](Testing_specs.md)  
+
+---
+
 ## Table of Contents
 
 1. Introduction
@@ -17,12 +24,6 @@
 11. Numeric Formats
 12. Module Hierarchy
 13. Confirmed System Parameters
-
----
-
-There is an additional document about the implementation details of this project for spinalHDL:
-
-[Implementation_specs.md](Implementation_specs.md)  
 
 ---
 
