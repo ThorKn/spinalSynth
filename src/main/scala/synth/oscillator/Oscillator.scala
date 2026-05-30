@@ -2,7 +2,7 @@ package synth.oscillator
 
 import spinal.core._
 import spinal.lib._
-import synth.OscillatorConfig
+import synth.common.OscillatorConfig
 
 class Oscillator extends Component {
   val io = new Bundle {

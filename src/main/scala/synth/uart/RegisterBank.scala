@@ -2,7 +2,7 @@ package synth.uart
 
 import spinal.core._
 import spinal.lib._
-import synth.{RegisterWrite, OscillatorConfig}
+import synth.common.{RegisterWrite, OscillatorConfig}
 
 class RegisterBank extends Component {
 

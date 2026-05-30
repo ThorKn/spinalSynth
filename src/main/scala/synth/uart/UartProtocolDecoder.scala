@@ -3,7 +3,7 @@ package synth.uart
 import spinal.core._
 import spinal.lib._
 import spinal.lib.fsm._
-import synth.RegisterWrite
+import synth.common.RegisterWrite
 
 class UartProtocolDecoder extends Component {
 

@@ -7,6 +7,8 @@ import synth.uart._
 import synth.oscillator.Oscillator
 import synth.output._
 import synth.mixing.Attenuator
+import synth.timing.TimingGenerator
+import synth.common._
 
 class Synth extends Component {
 

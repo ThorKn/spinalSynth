@@ -1,4 +1,4 @@
-package synth
+package synth.timing
 
 import spinal.core._
 import spinal.lib._

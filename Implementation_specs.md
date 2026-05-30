@@ -39,7 +39,10 @@ spinalSynth/
 │   │   └── scala/
 │   │       └── synth/          # Root package for the project
 │   │           ├── Synth.scala             # Top-level System Integration (per Section 2)
-│   │           ├── TimingGenerator.scala   # Tick generation logic (per Section 3)
+│   │           ├── common/                 # Shared system types and bundles
+│   │           │   └── Types.scala         # Unified hardware types and bundles
+│   │           ├── timing/                 # System control and tick generation
+│   │           │   └── TimingGenerator.scala # Tick generation logic (per Section 3)
 │   │           ├── uart/                   # Control Path logic
 │   │           │   ├── Uart.scala                # UART Subsystem Wrapper
 │   │           │   ├── UartRx.scala              # UART Receiver
@@ -58,7 +61,8 @@ spinalSynth/
 │       └── scala/
 │           └── synth/          # SpinalSim testbenches
 │               ├── SynthSim.scala          # Full system simulation
-│               ├── TimingSim.scala         # Verifying tick precision
+│               ├── timing/
+│               │   └── TimingSim.scala     # Verifying tick precision
 │               ├── oscillator/
 │               │   └── WaveformSim.scala   # Verifying Generator math
 │               └── output/

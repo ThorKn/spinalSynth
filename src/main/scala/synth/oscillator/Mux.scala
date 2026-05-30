@@ -2,7 +2,7 @@ package synth.oscillator
 
 import spinal.core._
 import spinal.lib._
-import synth.Waveforms
+import synth.common.Waveforms
 
 class Mux extends Component {
   val io = new Bundle {

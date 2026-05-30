@@ -59,7 +59,7 @@ The project is intentionally designed to remain:
 The project was developed with the heavy usage of AI tools. All the specification documents were created via talking sessions to chatGPT, most of them in voice chat on the mobile with follow ups on the keyboard.
 
 Impementation, debugging and testing was done in VSCode with the free Gemini Extension.
-Later on, i switched the IDE to Antigravity and started paying for Gemini Access (Gemini Pro, Gemini Flash 3.5).
+Later on, i switched the IDE to Antigravity and started paying for Gemini Access (Gemini Pro, Gemini Flash 3.5)
 
 ---
 
@@ -79,7 +79,7 @@ External Interface (24MHz Clk, Reset, UART Rx)
                 ↓
 ┌───────────────────────────────────────────────┐
 │  Synthesis Engine                             │
-│  [TimingGenerator]                            │
+│  [TimingGenerator] (synth.timing)             │
 │      ↓                                        │
 │  [Oscillator] (synth.oscillator)              │
 │      ↓                                        │
@@ -616,8 +616,11 @@ Synth
  │           ├── UartRx
  │           ├── UartProtocolDecoder
  │           └── RegisterBank
+ ├── common/ (Shared System Types)
+ │     └── Types
  │
- ├── TimingGenerator
+ ├── timing/ (System Control)
+ │     └── TimingGenerator
  │
  ├── oscillator/ (Core Engine)
  │     └── Oscillator

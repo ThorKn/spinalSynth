@@ -1,4 +1,4 @@
-package synth
+package synth.common
 
 import spinal.core._
 

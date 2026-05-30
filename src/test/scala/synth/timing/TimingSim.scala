@@ -1,6 +1,7 @@
-package synth
+package synth.timing
 
 import spinal.core.sim._
+import synth.timing.TimingGenerator
 import org.scalatest.funsuite.AnyFunSuite
 
 class TimingSim extends AnyFunSuite {

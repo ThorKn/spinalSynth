@@ -2,7 +2,7 @@ package synth.uart
 
 import spinal.core._
 import spinal.lib._
-import synth.OscillatorConfig
+import synth.common.OscillatorConfig
 
 class Uart extends Component {
   val io = new Bundle {
