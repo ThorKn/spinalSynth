@@ -1,9 +1,17 @@
-h1, h2, h3 {
-    font-size: 14px;
-    line-height:150%;
+h1,
+h2,
+h3 {
+    font-size: 15px;
+    line-height: 150%;
 }
 
-p, li, ul, code, table, th, td {
-    font-size: 10px;
-    line-height:120%;
+p,
+li,
+ul,
+code,
+table,
+th,
+td {
+    font-size: 13px;
+    line-height: 150%;
 }
